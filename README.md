@@ -1,3 +1,13 @@
 # SFTp
 
-Début de la description du projet
+Secure file transfert between connected people
+
+BDD : MySQL
+
+Languages:
+- HTML
+- CSS
+- JS
+- SQL
+- PHP
+- XML
