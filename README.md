@@ -1,6 +1,6 @@
 # SFTp
 
-Secure file transfert between connected people
+Secure file transfer between connected people
 
 BDD : MySQL
 
