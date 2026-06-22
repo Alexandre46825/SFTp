@@ -7,7 +7,6 @@ from schemas import UserOut
 
 router = APIRouter()
 
-
 @router.get("/users", response_model=list[UserOut])
 def get_all_users(
     db: Session = Depends(get_db),
