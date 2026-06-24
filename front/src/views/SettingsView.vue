@@ -4,8 +4,8 @@
       Paramètres
     </h2>
 
-    <div class="space-y-6">
-      <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+    <div class="p-6 space-y-8">
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-slate-700">
         <h3 class="text-xl font-semibold mb-4">
           Profil
         </h3>
@@ -25,7 +25,7 @@
         </div>
       </div>
 
-      <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-slate-700">
         <h3 class="text-xl font-semibold mb-4">
           Préférences
         </h3>

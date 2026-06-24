@@ -6,13 +6,9 @@ defineProps({
 </script>
 
 <template>
-  <div class="bg-slate-800 rounded-xl p-6 border border-slate-700">
-    <p class="text-slate-400 text-sm">
-      {{ title }}
-    </p>
-
-    <h3 class="text-3xl font-bold mt-2">
-      {{ value }}
-    </h3>
+  <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+    <p class="text-slate-400 text-sm">{{ title }}</p>
+    <p class="text-2xl font-bold">{{ value }}</p>
   </div>
 </template>
+
