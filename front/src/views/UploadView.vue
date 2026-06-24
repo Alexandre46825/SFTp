@@ -1,39 +1,119 @@
 <script setup>
 import { ref, computed } from 'vue'
-
+//import { useFriendsStore } from '@/stores/friends'
 
 // Initialisation of the form data
-const selectedFile = ref({
-  name: 'project_v2_final.tar.gz',
-  size: 84,
-})
-const recipients = ref(['@marc', '@lea'])
+const selectedFile = ref(null)
+const fileInput = ref(null)
+
+function handleFileChange(event) {
+  const file = event.target.files[0]
+
+  if (!file) return
+
+  selectedFile.value = {
+    file,
+    name: file.name,
+    size: +(file.size / 1024 / 1024).toFixed(2)
+  }
+
+  uploadProgress.value = 0
+}
+
+function removeFile() {
+  selectedFile.value = null
+
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
+}
 
 const message = ref(
   'Here is the latest build — please review before Friday.'
 )
 
-const encryption = ref('AES-256')
 const expiration = ref('7 days')
-
 const uploadProgress = ref(65)
 
-const uploadedSize = computed(() =>
-  (selectedFile.value.size * uploadProgress.value / 100).toFixed(1)
-)
+const uploadedSize = computed(() => {
+  if (!selectedFile.value) return 0
 
-const remainingTime = computed(() =>
-  Math.round((selectedFile.value.size - uploadedSize.value) / (selectedFile.value.size / uploadProgress.value))
-)
+  return (
+    selectedFile.value.size * uploadProgress.value / 100
+  ).toFixed(1)
+})
+
+const remainingTime = computed(() => {
+  if (uploadProgress.value === 0 || !selectedFile.value) {
+    return '--'
+  }
+
+  const speed = 5 // MB/s simulés
+
+  const remaining =
+    selectedFile.value.size - Number(uploadedSize.value)
+
+  return Math.ceil(remaining / speed)
+})
+let interval = null
+
+function startUpload() {
+  if (!selectedFile.value) return
+
+  uploadProgress.value = 0
+
+  clearInterval(interval)
+
+  interval = setInterval(() => {
+    if (uploadProgress.value >= 100) {
+      clearInterval(interval)
+      return
+    }
+
+    uploadProgress.value += 5
+  }, 500)
+}
+//const friendsStore = useFriendsStore()
+
+const recipients = ref([])
+const selectedRecipient = ref('')
+
+function addRecipient() {
+  if (
+    selectedRecipient.value &&
+    !recipients.value.includes(selectedRecipient.value)
+  ) {
+    recipients.value.push(selectedRecipient.value)
+  }
+
+  selectedRecipient.value = ''
+}
+function removeRecipient(recipient) {
+  recipients.value = recipients.value.filter(
+    r => r !== recipient
+  )
+}
+// const formData = new FormData()
+// formData.append('file', selectedFile.value.file)
+
+// await axios.post('/api/upload', formData, {
+//   onUploadProgress: (event) => {
+//     uploadProgress.value = Math.round(
+//       (event.loaded * 100) / event.total
+//     )
+//   }
+// })
 </script>
 
 <template>
-  <div class="max-w-3xl mx-auto">
-    <h2 class="text-3xl font-bold mb-8">
-      Send a file
-    </h2>
+  <div class="p-6 space-y-8">
+    
+    <div>
+      <h1 class="text-3xl font-bold">Send a file</h1>
+      <p class="text-slate-400">Share files with your contacts</p>
+    </div>
 
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 space-y-8">
+    <div class="bg-white dark:bg-gray-800 border border-slate-700 rounded-2xl p-8 space-y-8">
 
       <!-- Browse files -->
       <div>
@@ -55,14 +135,16 @@ const remainingTime = computed(() =>
           </div>
 
           <input
+            ref="fileInput"
             type="file"
             class="hidden"
-          >
+            @change="handleFileChange"
+          />
         </label>
       </div>
 
       <!-- Selected file -->
-      <div>
+      <div v-if="selectedFile">
         <label class="block text-sm font-medium text-slate-400 mb-3">
           Selected file
         </label>
@@ -84,65 +166,64 @@ const remainingTime = computed(() =>
             </div>
           </div>
 
-          <button class="text-red-400 hover:text-red-300">
+          <button
+            class="text-red-400 hover:text-red-300"
+            @click="removeFile"
+          >
             Delete
           </button>
         </div>
       </div>
 
       <!-- Recipient -->
-      <div>
-        <label class="block text-sm font-medium text-slate-400 mb-3">
-          Recipient
-        </label>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+        <div class="p-4 rounded-xl border border-slate-700">
 
-        <div class="flex flex-wrap gap-2 mb-3">
-          <span
-            v-for="recipient in recipients"
-            :key="recipient"
-            class="bg-blue-600/20 text-blue-300 px-4 py-2 rounded-full"
-          >
-            {{ recipient }}
-          </span>
-
-          <button
-            class="px-4 py-2 rounded-full border border-slate-600 hover:bg-slate-700 transition"
-          >
-            + Add recipient
-          </button>
-        </div>
-      </div>
-
-      <!-- Message -->
-      <div>
-        <label class="block text-sm font-medium text-slate-400 mb-3">
-          Message (optional)
-        </label>
-
-        <textarea
-          v-model="message"
-          rows="4"
-          class="w-full rounded-xl bg-slate-900 border border-slate-700 p-4 outline-none focus:border-blue-500 resize-none"
-        />
-      </div>
-
-      <!-- Settings -->
-      <div class="grid md:grid-cols-2 gap-6">
-        <div>
           <label class="block text-sm font-medium text-slate-400 mb-3">
-            Encryption
+            Recipient
           </label>
 
-          <select
-            v-model="encryption"
-            class="w-full rounded-xl bg-slate-900 border border-slate-700 p-3 focus:border-blue-500 outline-none"
-          >
-            <option>AES-128</option>
-            <option>AES-256</option>
-          </select>
-        </div>
+          <div class="flex flex-wrap gap-2 mb-3">
+            <span
+              v-for="recipient in recipients"
+              :key="recipient"
+              class="bg-blue-600/20 text-blue-300 px-4 py-2 rounded-full flex items-center gap-2"
+            >
+              {{ recipient }}
 
-        <div>
+              <button @click="removeRecipient(recipient)">
+                ✕
+              </button>
+            </span>
+
+            <div class="flex gap-2">
+              <select
+                v-model="selectedRecipient"
+                class="rounded-full border border-slate-600 px-4 py-2 bg-slate-900"
+              >
+                <option value="">
+                  Select a friend
+                </option>
+
+                <option
+                  v-for="friend in friends"
+                  :key="friend"
+                  :value="friend"
+                >
+                  {{ friend }}
+                </option>
+              </select>
+
+              <button
+                class="px-4 py-2 rounded-full border border-slate-600"
+                @click="addRecipient"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="p-4 rounded-xl border border-slate-700">
           <label class="block text-sm font-medium text-slate-400 mb-3">
             Expires in
           </label>
@@ -159,9 +240,22 @@ const remainingTime = computed(() =>
         </div>
       </div>
 
+      <!-- Message -->
+      <div>
+        <label class="block text-sm font-medium text-slate-400 mb-3">
+          Message (optional)
+        </label>
+
+        <textarea
+          v-model="message"
+          rows="4"
+          class="w-full rounded-xl bg-slate-900 border border-slate-700 p-4 outline-none focus:border-blue-500 resize-none"
+        />
+      </div>
       <!-- Send button -->
       <button
         class="w-full bg-blue-600 hover:bg-blue-700 transition rounded-xl py-4 font-semibold text-lg"
+        @click="startUpload"
       >
         🔒 Send securely
       </button>
@@ -185,7 +279,10 @@ const remainingTime = computed(() =>
           />
         </div>
 
-        <p class="text-sm text-slate-400">
+        <p
+          v-if="selectedFile"
+          class="text-sm text-slate-400"
+        >
           {{ uploadedSize }} MB of {{ selectedFile.size }} MB · ~{{ remainingTime }}s remaining
         </p>
       </div>
