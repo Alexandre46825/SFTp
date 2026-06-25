@@ -110,10 +110,17 @@ function declineRequest(id) {
 </script>
 
 <template>
-  <div class="grid lg:grid-cols-2 gap-6">
+  <div class="p-6 space-y-8">
+
+    <div>
+      <h1 class="text-3xl font-bold">Network Management</h1>
+      <p class="text-slate-400">Manage your connections and relationships</p>
+    </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 gap-4">
 
     <!-- LISTE AMIS -->
-    <div class="bg-slate-800 rounded-2xl border border-slate-700 p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-700 p-4">
       <h2 class="text-xl font-bold mb-4">👥 Amis</h2>
 
       <div class="space-y-2">
@@ -121,7 +128,7 @@ function declineRequest(id) {
           v-for="friend in friends"
           :key="friend.id"
           @click="openProfile(friend)"
-          class="p-3 rounded-xl cursor-pointer hover:bg-slate-700 transition flex justify-between items-center"
+          class="p-3 rounded-xl cursor-pointer hover:bg-gray-200 dark:hover:bg-slite-800 transition flex justify-between items-center"
         >
           <div>
             <p class="font-semibold">{{ friend.name }}</p>
@@ -143,7 +150,7 @@ function declineRequest(id) {
     </div>
 
     <!-- DEMANDES -->
-    <div class="bg-slate-800 rounded-2xl border border-slate-700 p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-700 p-4">
       <h2 class="text-xl font-bold mb-4">➕ Demandes d'amis</h2>
 
       <div class="space-y-3">
@@ -174,7 +181,7 @@ function declineRequest(id) {
 
         <button
         @click="openAddFriend"
-        class="w-full border border-slate-600 hover:bg-slate-700 py-2 rounded-xl mt-4"
+        class="w-full border border-slate-600 hover:bg-gray-200 dark:hover:bg-slite-800 py-2 rounded-xl mt-4"
         >
         ➕ Ajouter un ami
         </button>
@@ -187,7 +194,7 @@ function declineRequest(id) {
   @click="closeAddFriend"
 >
   <div
-    class="bg-slate-800 w-full max-w-2xl rounded-2xl border border-slate-700 p-6"
+    class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl border border-slate-700 p-6"
     @click.stop
   >
     <!-- HEADER -->
@@ -198,14 +205,14 @@ function declineRequest(id) {
 
       <button
         @click="closeAddFriend"
-        class="text-slate-400 hover:text-white"
+        class="text-slate-400 hover:text-black dark:text-white"
       >
         ✖
       </button>
     </div>
 
     <!-- SEARCH + FILTER -->
-    <div class="grid md:grid-cols-2 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <input
         v-model="searchQuery"
         type="text"
@@ -276,13 +283,13 @@ function declineRequest(id) {
       @click="closeModal"
     >
       <div
-        class="bg-slate-800 w-full max-w-md rounded-2xl border border-slate-700 p-6 relative"
+        class="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl border border-slate-700 p-6 relative"
         @click.stop
       >
         <!-- bouton fermer -->
         <button
           @click="closeModal"
-          class="absolute top-3 right-3 text-slate-400 hover:text-white"
+          class="absolute top-3 right-3 text-slate-400 hover:text-black dark:text-white"
         >
           ✖
         </button>
@@ -315,6 +322,6 @@ function declineRequest(id) {
         </div>
       </div>
     </div>
-
+  </div>
   </div>
 </template>
