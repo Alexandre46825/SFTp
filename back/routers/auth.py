@@ -7,6 +7,7 @@ from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from services.pgp import generate_pgp_keypair
 import os
 
 load_dotenv()
@@ -47,6 +48,22 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    full_name = f"{user_data.name} {user_data.surname}"
+
+    public_key, private_key = generate_pgp_keypair(
+        user_id=new_user.id_user,
+        name_real=full_name,
+        name_email=user_data.mail,
+        passphrase=user_data.password_pgp
+    )
+
+    new_user.password_pgp = user_data.password_pgp
+    new_user.public_key = public_key
+    new_user.private_key = private_key
+    db.commit()
+    db.refresh(new_user)
+
     return new_user
 
 
@@ -90,4 +107,20 @@ def register_admin(
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    full_name = f"{user_data.name} {user_data.surname}"
+
+    public_key, private_key = generate_pgp_keypair(
+        user_id=new_user.id_user,
+        name_real=full_name,
+        name_email=user_data.mail,
+        passphrase=user_data.password_pgp
+    )
+
+    new_user.password_pgp = user_data.password_pgp
+    new_user.public_key = public_key
+    new_user.private_key = private_key
+    db.commit()
+    db.refresh(new_user)
+
     return new_user

@@ -9,6 +9,7 @@ class UserCreate(BaseModel):
     username: str
     mail: EmailStr
     password: str
+    password_pgp: str
     location: Optional[str] = None
 
 class UserOut(BaseModel):
@@ -109,3 +110,7 @@ class BanRecordOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class RoleUpdate(BaseModel):
+    is_admin: bool

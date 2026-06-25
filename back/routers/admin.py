@@ -4,7 +4,7 @@ from datetime import datetime
 from database import get_db
 from dependencies import get_admin_user
 from models import User, File, Share, Log, BanRecord
-from schemas import UserOut, BanRequest, BanRecordOut
+from schemas import UserOut, BanRequest, BanRecordOut, RoleUpdate
 
 router = APIRouter()
 
@@ -77,6 +77,26 @@ def unban_user(
 
     db.commit()
     return {"message": "Utilisateur débanni"}
+
+
+@router.put("/users/{user_id}/role", response_model=UserOut)
+def update_user_role(
+    user_id: int,
+    role_data: RoleUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
+    user = db.query(User).filter(User.id_user == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
+    if user_id == current_user.id_user and not role_data.is_admin:
+        raise HTTPException(status_code=400, detail="Vous ne pouvez pas retirer vos propres droits admin")
+
+    user.is_admin = role_data.is_admin
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 @router.get("/users/{user_id}/ban-history", response_model=list[BanRecordOut])
