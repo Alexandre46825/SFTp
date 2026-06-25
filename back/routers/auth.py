@@ -55,6 +55,13 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.mail == credentials.mail).first()
     if not user or not verify_password(credentials.password, user.password):
         raise HTTPException(status_code=401, detail="Identifiants invalides")
+    if user.account_status == 2:
+        raise HTTPException(status_code=403, detail="Compte banni")
+    if user.account_status == 3:
+        raise HTTPException(status_code=403, detail="Compte supprimé")
+
+    user.last_login = datetime.utcnow()
+    db.commit()
 
     token = create_token({"sub": str(user.id_user), "username": user.username})
     return {"access_token": token, "token_type": "bearer"}

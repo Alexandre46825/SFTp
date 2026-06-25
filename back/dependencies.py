@@ -28,8 +28,10 @@ def get_current_user(
     user = db.query(User).filter(User.id_user == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="Compte désactivé")
+    if user.account_status == 2:
+        raise HTTPException(status_code=403, detail="Compte banni")
+    if user.account_status == 3:
+        raise HTTPException(status_code=403, detail="Compte supprimé")
 
     return user
 

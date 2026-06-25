@@ -2,9 +2,6 @@ from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional
 
-# ─────────────────────────────────────────
-#  USER
-# ─────────────────────────────────────────
 
 class UserCreate(BaseModel):
     name: str
@@ -21,16 +18,14 @@ class UserOut(BaseModel):
     username: str
     mail: str
     location: Optional[str]
-    is_active: bool
+    account_status: int
+    is_admin: bool
     created_at: datetime
+    last_login: Optional[datetime]
 
     class Config:
         from_attributes = True
 
-
-# ─────────────────────────────────────────
-#  AUTH
-# ─────────────────────────────────────────
 
 class LoginRequest(BaseModel):
     mail: EmailStr
@@ -40,10 +35,6 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-
-# ─────────────────────────────────────────
-#  FILE
-# ─────────────────────────────────────────
 
 class FileOut(BaseModel):
     id_file: int
@@ -55,10 +46,6 @@ class FileOut(BaseModel):
     class Config:
         from_attributes = True
 
-
-# ─────────────────────────────────────────
-#  SHARE
-# ─────────────────────────────────────────
 
 class ShareCreate(BaseModel):
     id_file: int
@@ -83,10 +70,6 @@ class ShareOut(BaseModel):
         from_attributes = True
 
 
-# ─────────────────────────────────────────
-#  FRIENDSHIP
-# ─────────────────────────────────────────
-
 class FriendshipCreate(BaseModel):
     id_receiver: int
 
@@ -101,10 +84,6 @@ class FriendshipOut(BaseModel):
         from_attributes = True
 
 
-# ─────────────────────────────────────────
-#  LOG
-# ─────────────────────────────────────────
-
 class LogOut(BaseModel):
     id_log: int
     id_user: Optional[int]
@@ -112,6 +91,21 @@ class LogOut(BaseModel):
     action_type: str
     ip_address: str
     log_timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class BanRequest(BaseModel):
+    reason: str
+
+class BanRecordOut(BaseModel):
+    id_ban: int
+    id_user: int
+    id_admin: int
+    banned_at: datetime
+    unbanned_at: Optional[datetime]
+    reason: str
 
     class Config:
         from_attributes = True
