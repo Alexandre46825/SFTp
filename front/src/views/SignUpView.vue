@@ -1,5 +1,10 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/Auth'
+
+const router = useRouter()
+const authStore = useAuthStore()
 
 const firstName = ref('')
 const lastName = ref('')
@@ -12,10 +17,19 @@ const confirmPassword = ref('')
 const encryptionPassword = ref('')
 const confirmEncryptionPassword = ref('')
 
-function handleRegister() {
+const loading = ref(false)
+const error = ref(null) 
+
+async function handleRegister() {
+
+  error.value = null
+
+  /* =========================
+     VALIDATION FRONT
+  ========================= */
 
   if (password.value !== confirmPassword.value) {
-    alert('Passwords do not match')
+    error.value = 'Passwords do not match'
     return
   }
 
@@ -23,23 +37,40 @@ function handleRegister() {
     encryptionPassword.value !==
     confirmEncryptionPassword.value
   ) {
-    alert('Encryption passwords do not match')
+    error.value = 'Encryption passwords do not match'
     return
   }
 
-  console.log({
-    firstName: firstName.value,
-    lastName: lastName.value,
-    username: username.value,
-    email: email.value,
-    password: password.value,
-    encryptionPassword: encryptionPassword.value
-  })
+  loading.value = true
+
+  try {
+
+    await authStore.signup({
+      firstname: firstName.value,
+      lastname: lastName.value,
+      username: username.value,
+      email: email.value,
+      password: password.value,
+      encryption_password: encryptionPassword.value
+    })
+
+    // redirection vers login après inscription
+    router.push('/login')
+
+  } catch (err) {
+
+    error.value =
+      err?.response?.data?.detail ||
+      'Signup failed'
+
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-screen p-4">
+  <div class="flex items-center justify-center min-h-screen bg-slate-950 p-4">
 
     <div class="w-full max-w-2xl bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg">
 
@@ -52,92 +83,116 @@ function handleRegister() {
         @submit.prevent="handleRegister"
       >
 
+        <!-- ERROR -->
+        <div
+          v-if="error"
+          class="md:col-span-2 bg-red-500/10 text-red-500 p-3 rounded-lg text-sm"
+        >
+          {{ error }}
+        </div>
+
+        <!-- FIRST NAME -->
         <div>
           <label>First name</label>
           <input
             v-model="firstName"
             type="text"
-            class="w-full p-3 rounded-lg border"
+            class="w-full p-3 rounded-lg border dark:bg-slate-900"
             required
           >
         </div>
 
+        <!-- LAST NAME -->
         <div>
           <label>Last name</label>
           <input
             v-model="lastName"
             type="text"
-            class="w-full p-3 rounded-lg border"
+            class="w-full p-3 rounded-lg border dark:bg-slate-900"
             required
           >
         </div>
 
+        <!-- USERNAME -->
         <div>
           <label>Username</label>
           <input
             v-model="username"
             type="text"
-            class="w-full p-3 rounded-lg border"
+            class="w-full p-3 rounded-lg border dark:bg-slate-900"
             required
           >
         </div>
 
+        <!-- EMAIL -->
         <div>
           <label>Email</label>
           <input
             v-model="email"
             type="email"
-            class="w-full p-3 rounded-lg border"
+            class="w-full p-3 rounded-lg border dark:bg-slate-900"
             required
           >
         </div>
 
+        <!-- PASSWORD -->
         <div>
           <label>Password</label>
           <input
             v-model="password"
             type="password"
-            class="w-full p-3 rounded-lg border"
+            class="w-full p-3 rounded-lg border dark:bg-slate-900"
             required
           >
         </div>
 
+        <!-- CONFIRM PASSWORD -->
         <div>
           <label>Confirm password</label>
           <input
             v-model="confirmPassword"
             type="password"
-            class="w-full p-3 rounded-lg border"
+            class="w-full p-3 rounded-lg border dark:bg-slate-900"
             required
           >
         </div>
 
+        <!-- ENCRYPTION PASSWORD -->
         <div>
           <label>Encryption password</label>
           <input
             v-model="encryptionPassword"
             type="password"
-            class="w-full p-3 rounded-lg border"
+            class="w-full p-3 rounded-lg border dark:bg-slate-900"
             required
           >
         </div>
 
+        <!-- CONFIRM ENCRYPTION -->
         <div>
           <label>Confirm encryption password</label>
           <input
             v-model="confirmEncryptionPassword"
             type="password"
-            class="w-full p-3 rounded-lg border"
+            class="w-full p-3 rounded-lg border dark:bg-slate-900"
             required
           >
         </div>
 
+        <!-- SUBMIT -->
         <div class="md:col-span-2">
           <button
             type="submit"
-            class="w-full bg-blue-600 text-white py-3 rounded-lg"
+            class="w-full bg-blue-600 text-white py-3 rounded-lg disabled:opacity-50"
+            :disabled="loading"
           >
-            Create account
+            <span v-if="!loading">
+              Create account
+            </span>
+
+            <span v-else>
+              Creating account...
+            </span>
           </button>
         </div>
 

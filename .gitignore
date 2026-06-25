@@ -35,6 +35,7 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
+node_modules/
 front/node_modules
 front/node_modules/*
 

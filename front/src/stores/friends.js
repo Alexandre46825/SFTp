@@ -1,7 +1,5 @@
-// stores/friends.js
-
 import { defineStore } from 'pinia'
-import axios from 'axios'
+import api from '@/services/api'
 
 export const useFriendsStore = defineStore('friends', {
   state: () => ({
@@ -10,7 +8,7 @@ export const useFriendsStore = defineStore('friends', {
 
   actions: {
     async loadFriends() {
-      const response = await axios.get('/api/friends')
+      const response = await api.get('/friends')
       this.friends = response.data
     }
   }
