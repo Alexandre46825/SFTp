@@ -35,3 +35,14 @@ cd SFTp/
 sudo docker compose up --build -d
 ```
 
+## Front-End Overview
+
+The front-end of this project is built with **Vue 3 (Composition API)** and follows a modular architecture based on components, views, and Pinia stores.
+
+We use:
+- **Vue Router** for navigation between pages (dashboard, files, friends, admin, etc.)
+- **Pinia** for centralized state management (auth, files, friends, admin data)
+- **Axios** to communicate with the REST API
+- **TailwindCSS** for styling, including full **dark mode support**
+
+The application is designed as a **Single Page Application (SPA)** with a strong separation between UI, state, and API layers. Data is dynamically updated through store actions to ensure a reactive user experience without page reloads.
