@@ -94,7 +94,7 @@ const storagePercent = computed(() => {
       </div>
 
       <!-- STORAGE -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-700 p-6">
+      <div class="bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-2xl p-6">
 
         <div class="flex justify-between items-center mb-4">
 

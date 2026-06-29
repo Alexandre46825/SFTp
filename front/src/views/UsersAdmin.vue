@@ -70,11 +70,10 @@ function openUser(user) {
     <input
       v-model="search"
       placeholder="Search user..."
-      class="w-full md:w-1/3 p-3 rounded-xl bg-slate-900 border border-slate-700"
+      class="w-full md:w-1/3 p-3 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 border border-slate-200 dark:border-slate-700"
     />
 
-    <div class="bg-slate-900 rounded-xl border border-slate-700 overflow-hidden">
-      <table class="w-full text-sm">
+<div class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">      <table class="w-full text-sm">
         <thead class="bg-slate-800 text-slate-400 text-left">
           <tr>
             <th class="p-3 cursor-pointer" @click="sortBy('name')">

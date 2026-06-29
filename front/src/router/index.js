@@ -5,7 +5,6 @@ import LoginView from '../views/LoginView.vue'
 import SignUpView from '../views/SignUpView.vue'
 import HomeView from '../views/HomeView.vue'
 
-import FilesView from '../views/FilesView.vue'
 import UploadView from '../views/UploadView.vue'
 import DownloadView from '../views/DownloadView.vue'
 import SettingsView from '../views/SettingsView.vue'
@@ -41,12 +40,6 @@ const routes = [
         path: 'network',
         name: 'network',
         component: NetworkView,
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'files',
-        name: 'files',
-        component: FilesView,
         meta: { requiresAuth: true }
       },
       {

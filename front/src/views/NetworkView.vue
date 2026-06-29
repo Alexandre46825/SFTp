@@ -5,10 +5,18 @@ import { useUsersStore } from '@/stores/users'
 import { useAuthStore } from '@/stores/Auth'
 import { useModalStore } from '@/stores/modal'
 
+import { useAutoRefresh } from '@/composables/useAutoRefresh'
+
 const modal = useModalStore()
 const friendsStore = useFriendsStore()
 const userStore = useUsersStore()
 const auth = useAuthStore()
+
+
+useAutoRefresh([
+  () => friendsStore.refreshAll(),
+  () => userStore.loadUsers()
+], 2000) // toutes les 10s
 
 /* =========================
    UI STATE
@@ -161,7 +169,7 @@ function closeModal() {
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
       <!-- FRIENDS -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-700 p-4">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
         <h2 class="text-xl font-bold mb-4">👥 Amis</h2>
 
         <div v-if="friends.length === 0" class="text-slate-400 text-sm">
@@ -188,7 +196,7 @@ function closeModal() {
       </div>
 
       <!-- REQUESTS -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-700 p-4">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4">
         <h2 class="text-xl font-bold mb-4">➕ Demandes</h2>
 
         <div v-if="requests.length === 0" class="text-slate-400 text-sm">
@@ -199,7 +207,7 @@ function closeModal() {
           <div
             v-for="req in requests"
             :key="req.id_user"
-            class="p-3 bg-slate-900 rounded-xl border border-slate-700"
+            class="p-3 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl border border-slate-200 dark:border-slate-700"
           >
             <p class="font-semibold">
               {{ req.username || 'Utilisateur inconnu' }}
@@ -242,7 +250,7 @@ function closeModal() {
       @click="closeAddFriend"
     >
       <div
-        class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl border border-slate-700 p-6"
+        class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-slate-700 p-6"
         @click.stop
       >
         <div class="flex justify-between items-center mb-6">
@@ -253,7 +261,7 @@ function closeModal() {
         <input
           v-model="searchQuery"
           placeholder="Rechercher..."
-          class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 mb-4"
+          class="w-full p-3 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 border border-slate-200 dark:border-slate-700 mb-4"
         />
 
         <div class="space-y-3 max-h-96 overflow-y-auto">
@@ -261,7 +269,7 @@ function closeModal() {
           <div
             v-for="user in availableUsers"
             :key="user.id_user"
-            class="flex justify-between items-center p-4 bg-slate-900 rounded-xl border border-slate-700"
+            class="flex justify-between items-center p-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl border border-slate-200 dark:border-slate-700"
           >
             <div>
               <p class="font-semibold">{{ user.username }}</p>
@@ -287,13 +295,13 @@ function closeModal() {
       @click="closeModal"
     >
       <div
-        class="relative bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl border border-slate-700 p-6 shadow-xl"
+        class="relative bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-xl"
         @click.stop
       >
         <!-- CLOSE -->
         <button
           @click="closeModal"
-          class="absolute top-3 right-3 text-slate-400 hover:text-white transition"
+          class="absolute top-3 right-3 text-slate-400 hover:text-slate-900 dark:text-white transition"
         >
           ✖
         </button>
@@ -311,16 +319,16 @@ function closeModal() {
           <!-- INFOS -->
           <div class="space-y-3">
 
-            <div class="p-3 rounded-xl bg-slate-900 border border-slate-700">
+            <div class="p-3 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 border border-slate-200 dark:border-slate-700">
               <p class="text-xs text-slate-400 mb-1">📧 Email</p>
-              <p class="text-sm text-white">
+              <p class="text-sm text-slate-900 dark:text-white">
                 {{ selectedFriend.mail || 'Not provided' }}
               </p>
             </div>
 
-            <div class="p-3 rounded-xl bg-slate-900 border border-slate-700">
+            <div class="p-3 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 border border-slate-200 dark:border-slate-700">
               <p class="text-xs text-slate-400 mb-1">📍 Location</p>
-              <p class="text-sm text-white">
+              <p class="text-sm text-slate-900 dark:text-white">
                 {{ selectedFriend.location || 'Unknown' }}
               </p>
             </div>

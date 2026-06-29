@@ -66,10 +66,10 @@ function getActionType(action) {
     </div>
 
     <!-- TABLE -->
-    <div v-else class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-700 overflow-hidden">
+    <div v-else class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
 
       <table class="w-full text-left text-sm">
-        <thead class="bg-slate-900 text-slate-300">
+        <thead class="bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 text-slate-300">
           <tr>
             <th class="p-3">User</th>
             <th class="p-3">Action</th>
@@ -82,7 +82,7 @@ function getActionType(action) {
           <tr
             v-for="log in logs"
             :key="log.id_log"
-            class="border-t border-slate-700 hover:bg-slate-900/50 transition"
+            class="border-t border-slate-200 dark:border-slate-700 hover:bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700/50 transition"
           >
 
             <!-- USER -->

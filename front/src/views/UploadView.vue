@@ -2,11 +2,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useFriendsStore } from '@/stores/friends'
 import { useUsersStore } from '@/stores/users'
+import {useModalStore} from '@/stores/modal'
 import api from '@/services/api'
 
 /* =========================
    LOAD DATA
 ========================= */
+const modal = useModalStore()
 const friendsStore = useFriendsStore()
 
 const friends = computed(() => friendsStore.friends)
@@ -78,7 +80,13 @@ function removeRecipient(id) {
    API UPLOAD
 ========================= */
 async function uploadFile() {
-  if (!selectedFile.value || recipients.value.length === 0) return
+  if (!selectedFile.value || recipients.value.length === 0){
+    modal.error(
+      'Error',
+      'Please select a file and at least one recipient before uploading.'
+    )
+    return
+  }
 
   const formData = new FormData()
 
@@ -111,9 +119,17 @@ async function uploadFile() {
   try {
     await Promise.all(promises)
     uploadProgress.value = 100
+    modal.success(
+      'Upload Complete',
+      'The file has been successfully uploaded and sent to the selected recipients.'
+    )
   } catch (e) {
     console.error(e)
     clearInterval(interval)
+    modal.error(
+      'Error',
+      'An error occurred while trying to upload the file.'
+    )
   }
 }
 </script>
@@ -126,7 +142,7 @@ async function uploadFile() {
       <p class="text-slate-400">Share files with your contacts</p>
     </div>
 
-    <div class="bg-white dark:bg-gray-800 border border-slate-700 rounded-2xl p-8 space-y-8">
+    <div class="bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-8 space-y-8">
 
       <!-- Browse files -->
       <div>
@@ -162,7 +178,7 @@ async function uploadFile() {
           Selected file
         </label>
 
-        <div class="flex items-center justify-between bg-slate-900 rounded-xl p-4 border border-slate-700">
+        <div class="flex items-center justify-between bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
           <div class="flex items-center gap-4">
             <div class="text-3xl">
               📦
@@ -190,7 +206,7 @@ async function uploadFile() {
 
       <!-- Recipient -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-        <div class="p-4 rounded-xl border border-slate-700">
+        <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-700">
 
           <label class="block text-sm font-medium text-slate-400 mb-3">
             Recipient
@@ -210,7 +226,7 @@ async function uploadFile() {
             <div class="flex gap-2">
               <select
                 v-model="selectedRecipient"
-                class="rounded-full border border-slate-600 px-4 py-2 bg-slate-900"
+                class="rounded-full border border-slate-600 px-4 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700"
               >
                 <option value="">
                   Select a friend
@@ -234,14 +250,14 @@ async function uploadFile() {
             </div>
           </div>
         </div>
-        <div class="p-4 rounded-xl border border-slate-700">
+        <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-700">
           <label class="block text-sm font-medium text-slate-400 mb-3">
             Expires in
           </label>
 
           <select
             v-model="expiration"
-            class="w-full rounded-xl bg-slate-900 border border-slate-700 p-3 focus:border-blue-500 outline-none"
+            class="w-full rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 border border-slate-200 dark:border-slate-700 p-3 focus:border-blue-500 outline-none"
           >
             <option value="1">1 day</option>
             <option value="3">3 days</option>
@@ -260,7 +276,7 @@ async function uploadFile() {
         <textarea
           v-model="message"
           rows="4"
-          class="w-full rounded-xl bg-slate-900 border border-slate-700 p-4 outline-none focus:border-blue-500 resize-none"
+          class="w-full rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 border border-slate-200 dark:border-slate-700 p-4 outline-none focus:border-blue-500 resize-none"
         />
       </div>
       <!-- Send button -->
