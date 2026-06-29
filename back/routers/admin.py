@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from database import get_db
 from dependencies import get_admin_user
-from models import User, File, Log, BanRecord
-from schemas import UserOut, BanRequest, BanRecordOut, RoleUpdate
+from models import User, File, Upload, Log, BanRecord
+from schemas import UserOut, UserOutWithStorage, BanRequest, BanRecordOut, RoleUpdate, LogOut
 import os
 
 router = APIRouter()
@@ -12,12 +12,37 @@ router = APIRouter()
 UPLOAD_DIR = "storage/"
 
 
-@router.get("/users", response_model=list[UserOut])
+@router.get("/users", response_model=list[UserOutWithStorage])
 def get_all_users(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user)
 ):
-    return db.query(User).all()
+    users = db.query(User).all()
+
+    result = []
+    for user in users:
+        uploads = db.query(Upload).filter(Upload.id_user == user.id_user).all()
+        total_size = 0
+        for upload in uploads:
+            if upload.file:
+                total_size += upload.file.file_size or 0
+
+        user_dict = {
+            "id_user": user.id_user,
+            "name": user.name,
+            "surname": user.surname,
+            "username": user.username,
+            "mail": user.mail,
+            "location": user.location,
+            "account_status": user.account_status,
+            "is_admin": user.is_admin,
+            "created_at": user.created_at,
+            "last_login": user.last_login,
+            "storage_used_bytes": total_size
+        }
+        result.append(user_dict)
+
+    return result
 
 
 @router.delete("/users/{user_id}")
@@ -160,10 +185,26 @@ def get_overview(
     }
 
 
-@router.get("/logs")
+@router.get("/logs", response_model=list[LogOut])
 def get_logs(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_admin_user)
 ):
     logs = db.query(Log).order_by(Log.log_timestamp.desc()).limit(100).all()
+    return logs
+
+
+@router.get("/logs/{user_id}", response_model=list[LogOut])
+def get_logs_by_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
+    user = db.query(User).filter(User.id_user == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
+    logs = db.query(Log).filter(
+        Log.id_user == user_id
+    ).order_by(Log.log_timestamp.desc()).limit(100).all()
     return logs

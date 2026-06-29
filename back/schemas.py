@@ -27,6 +27,22 @@ class UserOut(BaseModel):
     class Config:
         from_attributes = True
 
+class UserOutWithStorage(BaseModel):
+    id_user: int
+    name: str
+    surname: str
+    username: str
+    mail: str
+    location: Optional[str]
+    account_status: int
+    is_admin: bool
+    created_at: datetime
+    last_login: Optional[datetime]
+    storage_used_bytes: int
+
+    class Config:
+        from_attributes = True
+
 class UserPublicOut(BaseModel):
     id_user: int
     mail: str
