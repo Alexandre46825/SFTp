@@ -12,11 +12,11 @@ Languages:
 - PHP
 - XML
 
-## Mise en place du projet sur Linux
+## Project setup on Linux
 
-### Commande:
+### Commands:
 
-#### Installation Docker:
+#### Docker installation steps:
 
 ```
 sudo apt install -y ca-certificates curl
