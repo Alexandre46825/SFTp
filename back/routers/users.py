@@ -4,6 +4,7 @@ from database import get_db
 from dependencies import get_current_user
 from models import User
 from schemas import UserOut, PasswordUpdate, ProfileUpdate, UserPublicOut
+from services.crypto import decrypt_text
 from passlib.context import CryptContext
 
 router = APIRouter()
@@ -23,6 +24,16 @@ def get_my_profile(
     current_user: User = Depends(get_current_user)
 ):
     return current_user
+
+
+@router.get("/me/pgp-keys")
+def get_my_pgp_keys(
+    current_user: User = Depends(get_current_user)
+):
+    return {
+        "private_key": decrypt_text(current_user.private_key),
+        "password_pgp": decrypt_text(current_user.password_pgp)
+    }
 
 
 @router.put("/me/password")

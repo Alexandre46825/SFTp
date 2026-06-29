@@ -8,6 +8,7 @@ from jose import jwt
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from services.pgp import generate_pgp_keypair
+from services.crypto import encrypt_text
 import os
 
 load_dotenv()
@@ -58,9 +59,9 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         passphrase=user_data.password_pgp
     )
 
-    new_user.password_pgp = user_data.password_pgp
+    new_user.password_pgp = encrypt_text(user_data.password_pgp)
     new_user.public_key = public_key
-    new_user.private_key = private_key
+    new_user.private_key = encrypt_text(private_key)
     db.commit()
     db.refresh(new_user)
 
@@ -117,9 +118,9 @@ def register_admin(
         passphrase=user_data.password_pgp
     )
 
-    new_user.password_pgp = user_data.password_pgp
+    new_user.password_pgp = encrypt_text(user_data.password_pgp)
     new_user.public_key = public_key
-    new_user.private_key = private_key
+    new_user.private_key = encrypt_text(private_key)
     db.commit()
     db.refresh(new_user)
 
