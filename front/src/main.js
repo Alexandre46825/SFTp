@@ -2,18 +2,16 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
+import { useAuthStore } from '@/stores/Auth'
 
 createApp(App)
   .use(router)
   .use(createPinia())
   .mount('#app')
 
-const userStore = useUserStore()
-const themeStore = useThemeStore()
-
-themeStore.initializeTheme()
+const authStore = useAuthStore()
 
 if (localStorage.getItem('token')) {
-  userStore.loadProfile()
+  authStore.fetchUser()
 }
 

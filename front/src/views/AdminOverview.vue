@@ -54,10 +54,9 @@ const storagePercent = computed(() =>
     </div>
 
     <!-- KPI CARDS -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
       <StatCard title="Total Users" :value="stats.users.toString()" />
-      <StatCard title="Active Users" :value="stats.activeUsers.toString()" />
       <StatCard title="Files Sent" :value="stats.files.toString()" />
       <StatCard title="Uploads Today" :value="stats.uploadsToday.toString()" />
 
