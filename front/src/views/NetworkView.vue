@@ -3,7 +3,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useFriendsStore } from '@/stores/friends'
 import { useUsersStore } from '@/stores/users'
 import { useAuthStore } from '@/stores/Auth'
+import { useModalStore } from '@/stores/modal'
 
+const modal = useModalStore()
 const friendsStore = useFriendsStore()
 const userStore = useUsersStore()
 const auth = useAuthStore()
@@ -32,51 +34,16 @@ onMounted(async () => {
    COMPUTED
 ========================= */
 
-const friends = computed(() => {
-  return friendsStore.friends.map(req => {
-    const otherUserId =
-      req.id_requester == auth.user.id
-        ? req.id_requester
-        : req.id_receiver
-
-    return {
-      id_friendship: req.id_friendship,
-      status: req.status,
-      created_at: req.created_at,
-
-      user: userStore.users.find(u => u.id_user === otherUserId)
-    }
-  })
-})
-
-const requests = computed(() => {
-  return friendsStore.requests.map(req => {
-    const otherUserId =
-      req.id_requester === auth.user.id
-        ? req.id_receiver
-        : req.id_requester
-
-    return {
-      ...req,
-      user: getUserById(otherUserId)
-    }
-  })
-})
+const friends = computed(() => friendsStore.friends)
+const requests = computed(() => friendsStore.requests)
 
 const availableUsers = computed(() => {
-  const friendIds = friends.value.map(f => f.id_user)
-  const requestUserIds = requests.value.map(r => r.user?.id_user)
-
+  const lowerQuery = searchQuery.value.toLowerCase()
   return userStore.users.filter(user => {
-    const notFriend = !friendIds.includes(user.id_user)
-    const notRequested = !requestUserIds.includes(user.id_user)
-
-    const matchSearch =
-      !searchQuery.value ||
-      user.username?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      user.mail?.toLowerCase().includes(searchQuery.value.toLowerCase())
-
-    return notFriend && notRequested && matchSearch
+    const isNotFriend = !friendsStore.friends.some(f => f.id_user === user.id_user)
+    const isNotSelf = user.id_user !== auth.user.id_user
+    const matchesQuery = user.username.toLowerCase().includes(lowerQuery) || user.mail.toLowerCase().includes(lowerQuery)
+    return isNotFriend && isNotSelf && matchesQuery
   })
 })
 
@@ -84,25 +51,78 @@ const availableUsers = computed(() => {
    ACTIONS
 ========================= */
 async function addFriend(user) {
-  await friendsStore.addFriend(user.id_user)
-  await friendsStore.loadRequests()
+  try {
+    await friendsStore.addFriend(user.id_user)
+    await friendsStore.loadRequests()
+    await friendsStore.refreshAll()
+    modal.success(
+      'Friend Request Sent',
+      `A friend request has been sent to ${user.username}.`
+    )
+  } catch (error) {
+    modal.error(
+      'Error',
+      `An error occurred while trying to send a friend request to ${user.username}.`
+    )
+  }
 }
 
 async function acceptRequest(req) {
-  await friendsStore.acceptFriend(req.id_friendship)
-  await friendsStore.refreshAll()
+  try {
+    await friendsStore.acceptFriend(req.id_user)
+    await friendsStore.refreshAll()
+    modal.success(
+      'Friend Request Accepted',
+      `You are now friends with ${req.username}.`
+    )
+  } catch (error) {
+    modal.error(
+      'Error',
+      `An error occurred while trying to accept the friend request from ${req.username}.`
+    )
+  }
 }
 
 async function declineRequest(req) {
-  await friendsStore.removeFriend(req.id_friendship)
+  try {
+    await friendsStore.removeFriend(req.id_user)
+    await friendsStore.refreshAll()
+    modal.success(
+      'Friend Request Declined',
+      `You have declined the friend request from ${req.username}.`
+    )
+  } catch (error) {
+    modal.error(
+      'Error',
+      `An error occurred while trying to decline the friend request from ${req.username}.`
+    )
+  }
+  await friendsStore.removeFriend(req.id_user)
   await friendsStore.refreshAll()
+  modal.success(
+    'Friend Request Declined',
+    `You have declined the friend request from ${req.username}.`
+  )
 }
 
 async function removeFriend() {
   if (!selectedFriend.value) return
+  try {
+    await friendsStore.removeFriend(selectedFriend.value.id_user)
+    await friendsStore.refreshAll()
+    closeModal()
+    modal.success(
+      'Friend Removed',
+      `You have removed ${selectedFriend.value.username} from your friends.`
+    )
+  } catch (error) {
+    closeModal()
+    modal.error(
+      'Error',
+      `An error occurred while trying to remove ${selectedFriend.value.username}.`
+    )
+  }
 
-  await friendsStore.removeFriend(selectedFriend.value.id_friendship)
-  closeModal()
 }
 
 /* =========================
@@ -156,8 +176,8 @@ function closeModal() {
             class="p-3 rounded-xl cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition flex justify-between items-center"
           >
             <div>
-              <p class="font-semibold">{{ friend.user?.username }}</p>
-              <p class="text-sm text-slate-400">{{ friend.user?.mail }}</p>
+              <p class="font-semibold">{{ friend.username }}</p>
+              <p class="text-sm text-slate-400">{{ friend.mail }}</p>
             </div>
 
             <span class="text-xs px-2 py-1 rounded-full bg-slate-700 text-slate-200">
@@ -178,14 +198,14 @@ function closeModal() {
         <div class="space-y-3">
           <div
             v-for="req in requests"
-            :key="req.id_friendship"
+            :key="req.id_user"
             class="p-3 bg-slate-900 rounded-xl border border-slate-700"
           >
             <p class="font-semibold">
-              {{ req.user?.username || 'Utilisateur inconnu' }}
+              {{ req.username || 'Utilisateur inconnu' }}
             </p>
             <p class="text-sm text-slate-400 mb-3">
-              {{ req.user?.mail }}
+              {{ req.mail }}
             </p>
 
             <div class="flex gap-2">
@@ -283,7 +303,7 @@ function closeModal() {
           <!-- HEADER -->
           <div class="text-center space-y-1">
             <h2 class="text-2xl font-bold">
-              @{{ selectedFriend.user.username }}
+              @{{ selectedFriend.username }}
             </h2>
 
           </div>
@@ -294,14 +314,14 @@ function closeModal() {
             <div class="p-3 rounded-xl bg-slate-900 border border-slate-700">
               <p class="text-xs text-slate-400 mb-1">📧 Email</p>
               <p class="text-sm text-white">
-                {{ selectedFriend.user.mail || 'Not provided' }}
+                {{ selectedFriend.mail || 'Not provided' }}
               </p>
             </div>
 
             <div class="p-3 rounded-xl bg-slate-900 border border-slate-700">
               <p class="text-xs text-slate-400 mb-1">📍 Location</p>
               <p class="text-sm text-white">
-                {{ selectedFriend.user.location || 'Unknown' }}
+                {{ selectedFriend.location || 'Unknown' }}
               </p>
             </div>
 

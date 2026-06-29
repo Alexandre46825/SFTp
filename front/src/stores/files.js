@@ -16,44 +16,38 @@ export const useFilesStore = defineStore('files', {
 
     totalSize: (state) =>
       state.files.reduce(
-        (sum, file) => sum + (file.size || 0),
+        (sum, file) => sum + (file.file_size || 0),
         0
       ),
 
     recentFiles: (state) =>
       [...state.files]
-        .sort(
-          (a, b) =>
-            new Date(b.created_at) -
-            new Date(a.created_at)
+        .sort((a, b) =>
+          new Date(b.upload_at) - new Date(a.upload_at)
         )
         .slice(0, 5)
   },
 
   actions: {
 
-    /* =========================
-       LOAD FILES
-    ========================= */
     async loadFiles() {
-
       this.loading = true
-
       try {
+        const res = await api.get('/files/my-files')
 
-        const response =
-          await api.get('/files/my-files')
-
-        this.files = response.data
+        this.files = res.data.map(file => ({
+          ...file,
+          name: file.file_name,
+          size: file.file_size,
+          uploaded_at: file.upload_at,
+          expires_at: file.expires_at
+        }))
 
       } finally {
         this.loading = false
       }
     },
 
-    /* =========================
-       SELECT FILE (frontend)
-    ========================= */
     selectFile(file) {
       this.selectedFile = file
     },
@@ -62,97 +56,45 @@ export const useFilesStore = defineStore('files', {
       this.selectedFile = null
     },
 
-    /* =========================
-       UPLOAD FILE
-    ========================= */
     async uploadFile({
       file,
       message = '',
-      expiration = '7 days',
-      encryption = 'AES-256',
+      expiration_date = 7,
       recipients = []
     }) {
 
-      const formData = new FormData()
-
-      formData.append('file', file)
-      formData.append('message', message)
-      formData.append('expiration', expiration)
-      formData.append('encryption', encryption)
-
-      recipients.forEach(r =>
-        formData.append('recipients[]', r)
-      )
-
       this.uploadProgress = 0
 
-      const response = await api.post(
-        '/files/upload',
-        formData,
-        {
-          headers: {
-            'Content-Type':
-              'multipart/form-data'
-          },
+      const requests = recipients.map(userId => {
+        const fd = new FormData()
 
-          onUploadProgress: (event) => {
+        fd.append('file', file)
+        fd.append('user_id', userId)
+        fd.append('message', message)
+        fd.append('expiration_date', expiration_date)
 
-            this.uploadProgress =
-              Math.round(
-                (event.loaded * 100) /
-                event.total
-              )
-          }
-        }
-      )
+        return api.post('/files/send', fd, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+      })
+
+      await Promise.all(requests)
 
       await this.loadFiles()
-
-      return response.data
+      this.uploadProgress = 0
     },
 
-    /* =========================
-       DELETE FILE
-    ========================= */
-    async deleteFile(fileId) {
-
-      await api.delete(
-        `/files/${fileId}`
-      )
-
-      this.files =
-        this.files.filter(
-          f => f.id !== fileId
-        )
-    },
-
-    /* =========================
-       DOWNLOAD FILE
-    ========================= */
     async downloadFile(fileId) {
-
-      const response =
-        await api.get(
-          `/files/${fileId}/download`,
-          {
-            responseType: 'blob'
-          }
-        )
-
-      const url =
-        window.URL.createObjectURL(
-          new Blob([response.data])
-        )
-
-      const link =
-        document.createElement('a')
-
-      link.href = url
-      link.setAttribute(
-        'download',
-        'file'
+      const res = await api.get(
+        `/files/download/${fileId}`,
+        { responseType: 'blob' }
       )
 
+      const url = window.URL.createObjectURL(new Blob([res.data]))
+
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', 'file')
       document.body.appendChild(link)
       link.click()
     }

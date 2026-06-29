@@ -1,47 +1,51 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import StatCard from '../components/StatCard.vue'
+import StatCard from '@/components/StatCard.vue'
+import api from '@/services/api'
 
-/* =========================
-   MOCK DATA (plus tard API)
-========================= */
-
-const stats = ref({
-  users: 128,
-  activeUsers: 34,
-  files: 842,
-  storageUsed: 2.4, // GB
-  storageMax: 10,   // GB
-  uploadsToday: 27,
-  shares: 56
+const overview = ref({
+  total_users: 0,
+  files_sent: 0,
+  uploads_today: 0,
+  storage_used_gb: 0,
+  storage_used_bytes: 0
 })
 
-const activities = ref([
-  { id: 1, text: 'Marc uploaded project.zip', type: 'upload' },
-  { id: 2, text: 'Léa added @Thomas', type: 'friend' },
-  { id: 3, text: 'File shared with @Alex', type: 'share' },
-  { id: 4, text: 'Upload failed: large_video.mp4', type: 'error' }
-])
+const loading = ref(true)
 
-const users = ref([
-  { id: 1, name: 'Marc', email: 'marc@mail.com', lastLogin: '2h ago' },
-  { id: 2, name: 'Léa', email: 'lea@mail.com', lastLogin: '1d ago' },
-  { id: 3, name: 'Alex', email: 'alex@mail.com', lastLogin: '5m ago' }
-])
+async function loadOverview() {
+  loading.value = true
 
-const files = ref([
-  { id: 1, name: 'project.zip', owner: 'Marc', size: '84MB', date: 'Today' },
-  { id: 2, name: 'design.fig', owner: 'Léa', size: '12MB', date: 'Yesterday' },
-  { id: 3, name: 'video.mp4', owner: 'Alex', size: '240MB', date: '2 days ago' }
-])
+  try {
+    const { data } = await api.get('/admin/overview')
+    overview.value = data
+  } catch (err) {
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(loadOverview)
 
 /* =========================
    COMPUTED
 ========================= */
 
-const storagePercent = computed(() =>
-  (stats.value.storageUsed / stats.value.storageMax) * 100
+const storageUsed = computed(() =>
+  Number(overview.value.storage_used_gb).toFixed(2)
 )
+
+// Si tu connais la capacité max de ton serveur,
+// modifie simplement cette valeur.
+const storageMax = 10
+
+const storagePercent = computed(() => {
+  return Math.min(
+    (overview.value.storage_used_gb / storageMax) * 100,
+    100
+  )
+})
 </script>
 
 <template>
@@ -49,114 +53,85 @@ const storagePercent = computed(() =>
 
     <!-- HEADER -->
     <div>
-      <h1 class="text-3xl font-bold">Admin Overview</h1>
-      <p class="text-slate-400">System activity & statistics</p>
+      <h1 class="text-3xl font-bold">
+        Admin Overview
+      </h1>
+
+      <p class="text-slate-400">
+        System activity & statistics
+      </p>
     </div>
 
-    <!-- KPI CARDS -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
-      <StatCard title="Total Users" :value="stats.users.toString()" />
-      <StatCard title="Files Sent" :value="stats.files.toString()" />
-      <StatCard title="Uploads Today" :value="stats.uploadsToday.toString()" />
-
+    <!-- LOADING -->
+    <div
+      v-if="loading"
+      class="text-center text-slate-400 py-20"
+    >
+      Loading overview...
     </div>
 
-    <!-- STORAGE -->
-    <div class="bg-slate-900 p-6 rounded-xl border border-slate-700">
-      <div class="flex justify-between mb-2">
-        <p class="font-medium">Storage usage</p>
-        <p class="text-slate-400 text-sm">
-          {{ stats.storageUsed }}GB / {{ stats.storageMax }}GB
-        </p>
-      </div>
+    <template v-else>
 
-      <div class="w-full bg-slate-700 rounded-full h-3">
-        <div
-          class="h-3 bg-blue-500 rounded-full"
-          :style="{ width: storagePercent + '%' }"
+      <!-- KPI -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <StatCard
+          title="Total Users"
+          :value="overview.total_users.toString()"
         />
+
+        <StatCard
+          title="Files Sent"
+          :value="overview.files_sent.toString()"
+        />
+
+        <StatCard
+          title="Uploads Today"
+          :value="overview.uploads_today.toString()"
+        />
+
+
       </div>
-    </div>
 
-    <!-- MAIN GRID -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+      <!-- STORAGE -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-700 p-6">
 
-      <!-- ACTIVITY -->
-      <div class="bg-slate-900 p-6 rounded-xl border border-slate-700">
-        <h2 class="text-xl font-semibold mb-4">Recent activity</h2>
+        <div class="flex justify-between items-center mb-4">
 
-        <div class="space-y-3">
-          <div
-            v-for="a in activities"
-            :key="a.id"
-            class="p-3 bg-slate-800 rounded-lg"
-          >
-            <p class="text-sm">{{ a.text }}</p>
+          <div>
+            <h2 class="text-xl font-semibold">
+              Storage Usage
+            </h2>
+
+            <p class="text-sm text-slate-400">
+              {{ overview.storage_used_bytes.toLocaleString() }} bytes
+            </p>
           </div>
+
+          <div class="text-right">
+            <p class="font-semibold">
+              {{ storageUsed }} GB / {{ storageMax }} GB
+            </p>
+          </div>
+
         </div>
-      </div>
 
-      <!-- USERS -->
-      <div class="bg-slate-900 p-6 rounded-xl border border-slate-700">
-        <h2 class="text-xl font-semibold mb-4">Users</h2>
-        <div class="overflow-x-auto">
-        <table class="w-full text-sm min-w-[700px]">
-          <thead class="text-slate-400 text-left">
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Last login</th>
-            </tr>
-          </thead>
+        <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
 
-          <tbody>
-            <tr
-              v-for="u in users"
-              :key="u.id"
-              class="border-t border-slate-800"
-            >
-              <td class="py-2">{{ u.name }}</td>
-              <td class="py-2 text-slate-400">{{ u.email }}</td>
-              <td class="py-2 text-slate-400">{{ u.lastLogin }}</td>
-            </tr>
-          </tbody>
-        </table>
+          <div
+            class="h-full bg-blue-500 transition-all duration-500"
+            :style="{ width: storagePercent + '%' }"
+          />
+
         </div>
+
+        <p class="text-right text-sm text-slate-400 mt-2">
+          {{ storagePercent.toFixed(1) }}%
+        </p>
+
       </div>
 
-    </div>
-
-    <!-- FILES -->
-    <div class="bg-slate-900 p-6 rounded-xl border border-slate-700">
-      <h2 class="text-xl font-semibold mb-4">Recent files</h2>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm min-w-[700px]">
-          <thead class="text-slate-400 text-left">
-            <tr>
-              <th>File</th>
-              <th>Owner</th>
-              <th>Size</th>
-            <th>Date</th>
-          </tr>
-            </thead>
-
-            <tbody>
-            <tr
-                v-for="f in files"
-                :key="f.id"
-                class="border-t border-slate-800"
-            >
-                <td class="py-2">{{ f.name }}</td>
-                <td class="py-2 text-slate-400">{{ f.owner }}</td>
-                <td class="py-2 text-slate-400">{{ f.size }}</td>
-                <td class="py-2 text-slate-400">{{ f.date }}</td>
-            </tr>
-            </tbody>
-        </table>
-      </div>
-    </div>
+    </template>
 
   </div>
 </template>
