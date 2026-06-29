@@ -49,3 +49,23 @@ def encrypt_file_pgp(file_bytes: bytes, recipient_public_key: str, recipient_ema
         raise ValueError(f"Échec du chiffrement PGP: {encrypted.status}")
 
     return encrypted.data
+
+
+def decrypt_file_pgp(encrypted_bytes: bytes, private_key: str, passphrase: str, tmp_id: str) -> bytes:
+    gnupghome = f"/tmp/gpg_op_{tmp_id}"
+    os.makedirs(gnupghome, exist_ok=True)
+    gpg = gnupg.GPG(gnupghome=gnupghome)
+
+    gpg.import_keys(private_key)
+
+    decrypted = gpg.decrypt(
+        encrypted_bytes,
+        passphrase=passphrase
+    )
+
+    shutil.rmtree(gnupghome, ignore_errors=True)
+
+    if not decrypted.ok:
+        raise ValueError(f"Échec du déchiffrement PGP: {decrypted.status}")
+
+    return decrypted.data

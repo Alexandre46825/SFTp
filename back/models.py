@@ -45,7 +45,7 @@ class File(Base):
     __tablename__ = "files"
 
     id_file     = Column(Integer, primary_key=True, index=True)
-    file_name   = Column(String(255))
+    file_name   = Column(Text)
     secure_name = Column(String(255), unique=True)
     file_size   = Column(BigInteger)
     mime_type   = Column(String(100))
@@ -57,6 +57,7 @@ class File(Base):
     upload = relationship("Upload", back_populates="file")
     logs   = relationship("Log", back_populates="file")
     sender = relationship("User", foreign_keys=[id_sender])
+
 
 class Upload(Base):
     __tablename__ = "uploads"

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Request
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Request, Query
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -6,7 +6,7 @@ from database import get_db
 from dependencies import get_current_user
 from models import User, File as FileModel, Upload, Log
 from schemas import FileOut
-from services.pgp import encrypt_file_pgp
+from services.pgp import encrypt_file_pgp, decrypt_file_pgp
 from services.crypto import encrypt_text, decrypt_text
 import uuid, os
 
@@ -84,7 +84,8 @@ def send_file(
 @router.get("/download/{file_id}")
 def download_file(
     file_id: int,
-    request: Request,
+    password_pgp: str = Query(..., description="Ta passphrase PGP pour déchiffrer le fichier"),
+    request: Request = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -102,6 +103,10 @@ def download_file(
     if file.expires_at and file.expires_at < datetime.utcnow():
         raise HTTPException(status_code=410, detail="Ce fichier a expiré")
 
+    real_passphrase = decrypt_text(current_user.password_pgp)
+    if password_pgp != real_passphrase:
+        raise HTTPException(status_code=401, detail="Mot de passe PGP incorrect")
+
     file_path = os.path.join(UPLOAD_DIR, file.secure_name)
 
     if not os.path.exists(file_path):
@@ -109,6 +114,15 @@ def download_file(
 
     with open(file_path, "rb") as f:
         encrypted_content = f.read()
+
+    real_private_key = decrypt_text(current_user.private_key)
+
+    decrypted_content = decrypt_file_pgp(
+        encrypted_bytes=encrypted_content,
+        private_key=real_private_key,
+        passphrase=password_pgp,
+        tmp_id=f"download_{current_user.id_user}_{file_id}"
+    )
 
     real_file_name = decrypt_text(file.file_name)
 
@@ -126,9 +140,9 @@ def download_file(
     db.commit()
 
     return Response(
-        content=encrypted_content,
-        media_type="application/pgp-encrypted",
-        headers={"Content-Disposition": f"attachment; filename={real_file_name}.gpg"}
+        content=decrypted_content,
+        media_type=file.mime_type,
+        headers={"Content-Disposition": f"attachment; filename={real_file_name}"}
     )
 
 
