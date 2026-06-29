@@ -1,1 +1,107 @@
+# Security Implementation Overview
 
+## Introduction
+
+This document outlines the security measures implemented in the file-sharing application. The goal is to ensure data protection, secure file transfers, and controlled access to user resources and administrative features.
+
+---
+
+## 1. Authentication
+
+All protected routes require a valid authentication token.
+Users must be logged in to access any sensitive API endpoints.
+
+* Token-based authentication is enforced (JWT or equivalent)
+* Expired tokens are rejected
+* No public access to protected resources
+
+---
+
+## 2. Authorization (Access Control)
+
+Strict access control rules are applied to ensure users can only access their own data.
+
+* Users can only access their own files
+* File ownership is verified on every download request
+* Admin routes are restricted to authorized roles only
+* Role validation is enforced on the backend (not only frontend)
+
+---
+
+## 3. File Security
+
+File handling has been secured to prevent unauthorized access and abuse.
+
+* Files are not publicly accessible via direct URLs
+* All file downloads go through authenticated API endpoints
+* File ownership and expiration date are checked before access
+* File names are sanitized and handled securely on the server
+
+---
+
+## 4. Input Validation
+
+All user inputs are validated on the backend to prevent malicious usage.
+
+* User IDs are verified before processing
+* Expiration values are restricted to acceptable ranges
+* File size limits are enforced
+* Messages are sanitized to prevent injection attacks
+
+---
+
+## 5. Secure File Uploads
+
+The file upload system has been designed with strict security rules.
+
+* File size limitations are enforced
+* File type validation is applied
+* Files are renamed on the server to avoid conflicts and injection risks
+* Files are stored outside of publicly accessible directories
+
+---
+
+## 6. Logging System
+
+A complete logging system has been implemented for audit and monitoring purposes.
+
+* User actions are logged (upload, download, delete)
+* IP addresses are stored for traceability
+* Admin can access system logs via a protected endpoint
+* Logs help detect suspicious activity
+
+---
+
+## 7. Cross-Origin Security (CORS)
+
+CORS policies are configured on the backend to restrict unauthorized access.
+
+* Only trusted frontend origins are allowed
+* Requests from unknown origins are blocked
+* Production and development environments are separated
+
+---
+
+## 8. Administrative Protection
+
+Administrative endpoints are fully secured.
+
+* Admin routes require elevated privileges
+* Backend verifies admin status for every request
+* Sensitive actions cannot be performed from the frontend alone
+
+---
+
+## 9. Data Protection Rules
+
+Additional business rules ensure system integrity:
+
+* Expired files are no longer accessible
+* Banned users may have restricted access
+* Critical actions are logged and traceable
+
+---
+
+## Conclusion
+
+The application implements a multi-layered security approach including authentication, authorization, secure file handling, input validation, and logging. These measures ensure that user data remains protected and system operations are secure and auditable.
