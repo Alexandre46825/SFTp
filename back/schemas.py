@@ -75,7 +75,6 @@ class FriendshipCreate(BaseModel):
 
 class FriendInfo(BaseModel):
     id_user: int
-    name: str
     surname: str
     location: Optional[str]
     mail: str
@@ -85,7 +84,6 @@ class FriendInfo(BaseModel):
 
 class FriendRequestInfo(BaseModel):
     id_user: int
-    name: str
     surname: str
     location: Optional[str]
     mail: str
