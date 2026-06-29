@@ -6,6 +6,7 @@ app = FastAPI(title="SFTP Cloud", version="1.0")
 
 app.add_middleware(
     CORSMiddleware,
+    allow_credentials=True,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
