@@ -72,7 +72,7 @@ function logout() {
 </script>
 
 <template>
-  <div class="max-w-3xl space-y-8">
+  <div class="p-6 space-y-8">
 
     <h2 class="text-3xl font-bold">
       Settings
@@ -171,11 +171,8 @@ function logout() {
     </div>
 
     <!-- LOGOUT -->
-    <div class="bg-red-500/10 border border-red-500 p-6 rounded-xl">
+    <div class="p-6 rounded-xl">
 
-      <h3 class="text-xl font-semibold text-red-400 mb-4">
-        Danger zone
-      </h3>
 
       <button
         class="w-full bg-red-600 hover:bg-red-700 py-3 rounded-lg"

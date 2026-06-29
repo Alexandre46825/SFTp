@@ -5,7 +5,6 @@ export const useFriendsStore = defineStore('friends', {
   state: () => ({
     friends: [],
     requests: [],
-    suggestions: [],
     loading: false
   }),
 

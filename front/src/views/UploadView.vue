@@ -1,16 +1,15 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useFriendsStore } from '@/stores/friends'
-import { useAuthStore } from '@/stores/Auth'
 import { useUsersStore } from '@/stores/users'
 import api from '@/services/api'
 
 /* =========================
    LOAD DATA
 ========================= */
-
 const friendsStore = useFriendsStore()
-const auth = useAuthStore()
+
+const friends = computed(() => friendsStore.friends)
 const usersStore = useUsersStore()
 
 onMounted(async () => {
@@ -53,27 +52,6 @@ function startUpload() {
 }
 
 /* =========================
-   FRIENDS -> USERS
-========================= */
-function getUserById(id) {
-  return usersStore.users.find(u => u.id_user === id)
-}
-
-const friends = computed(() => {
-  return friendsStore.friends.map(req => {
-    const otherUserId =
-      req.id_requester === auth.user.id
-        ? req.id_requester
-        : req.id_receiver
-
-    return {
-      friendship_id: req.id_friendship, // IMPORTANT
-      user: getUserById(otherUserId)
-    }
-  })
-})
-
-/* =========================
    RECIPIENTS
    -> on stocke uniquement des ID
 ========================= */
@@ -114,7 +92,6 @@ async function uploadFile() {
     fd.append('user_id', userId)
     fd.append('expiration_date', expiration.value)
     fd.append('message', message.value)
-    console.log(fd)
 
     return api.post('/files/send', fd, {
       headers: { 'Content-Type': 'multipart/form-data' }
@@ -241,10 +218,10 @@ async function uploadFile() {
 
                 <option
                   v-for="friend in friends"
-                  :key="friend.friendship_id"
-                  :value="friend.user?.id_user"
+                  :key="friend.id_user"
+                  :value="friend.id_user"
                 >
-                  {{ friend.user?.username || 'Unknown' }}
+                  {{ friend.username || 'Unknown' }}
                 </option> 
               </select>
 
