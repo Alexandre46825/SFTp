@@ -45,7 +45,7 @@ const modal = useModalStore()
 
           <button
             @click="modal.close()"
-            class="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+            class="px-5 py-2 rounded-lg bg-blue-600 text-slate-900 dark:text-white hover:bg-blue-700"
           >
             {{ modal.button }}
           </button>

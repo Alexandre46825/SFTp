@@ -2,10 +2,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useFilesStore } from '@/stores/files'
+import { useModalStore } from '@/stores/modal'
 import api from '@/services/api'
 
 const route = useRoute()
 const filesStore = useFilesStore()
+const modal = useModalStore()
 
 /* =========================
    LOAD
@@ -22,6 +24,8 @@ const file = computed(() => {
     f => f.id_file === Number(route.params.id_file)
   )
 })
+
+console.log(file.value)
 
 /* =========================
    UI
@@ -58,7 +62,6 @@ async function downloadFile() {
       }
     })
 
-    console.log(decryptionPassword.value)
     clearInterval(interval)
     progress.value = 100
 
@@ -73,8 +76,17 @@ async function downloadFile() {
 
     link.remove()
 
+    modal.success(
+      'Download Complete',
+      'The file has been successfully downloaded.'
+    )
+
   } catch (e) {
     console.error(e)
+    modal.error(
+      'Error',
+      'An error occurred while trying to download the file. Please check the decryption password and try again.'
+    )
   } finally {
     downloading.value = false
   }
@@ -88,7 +100,7 @@ async function downloadFile() {
       Download file
     </h1>
 
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-700 p-8 space-y-8">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 space-y-8">
 
       <div class="flex items-center gap-5">
 
@@ -118,10 +130,20 @@ async function downloadFile() {
           </p>
 
           <p class="font-semibold">
-            {{ file.sender.name}}
+            {{ file.sender.username }}
           </p>
         </div>
+        
+        <div>
+          <p class="text-slate-400 text-sm">
+            Message
+          </p>
 
+          <p class="font-semibold">
+            {{ file.message}}
+          </p>
+        </div>
+        
         <div>
           <p class="text-slate-400 text-sm">
             Upload date
@@ -155,7 +177,7 @@ async function downloadFile() {
           v-model="decryptionPassword"
           type="password"
           placeholder="Enter the encryption password..."
-          class="w-full rounded-xl bg-slate-900 border border-slate-700 p-4"
+          class="w-full rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 border border-slate-200 dark:border-slate-700 p-4"
         >
 
       </div>

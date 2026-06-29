@@ -79,7 +79,7 @@ function logout() {
     </h2>
 
     <!-- PROFILE -->
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-slate-700 space-y-5">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 space-y-5">
 
       <h3 class="text-xl font-semibold">
         Profile
@@ -93,7 +93,7 @@ function logout() {
         <input
           v-model="username"
           type="text"
-          class="w-full rounded-lg bg-slate-900 border border-slate-700 p-3 focus:border-blue-500 outline-none"
+          class="w-full rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 border border-slate-200 dark:border-slate-700 p-3 focus:border-blue-500 outline-none"
         >
       </div>
 
@@ -105,7 +105,7 @@ function logout() {
         <input
           v-model="location"
           type="text"
-          class="w-full rounded-lg bg-slate-900 border border-slate-700 p-3 focus:border-blue-500 outline-none"
+          class="w-full rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 border border-slate-200 dark:border-slate-700 p-3 focus:border-blue-500 outline-none"
         >
       </div>
 
@@ -119,7 +119,7 @@ function logout() {
     </div>
 
     <!-- PASSWORD -->
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-slate-700 space-y-5">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 space-y-5">
 
       <h3 class="text-xl font-semibold">
         Change password
@@ -133,7 +133,7 @@ function logout() {
         <input
           v-model="oldPassword"
           type="password"
-          class="w-full rounded-lg bg-slate-900 border border-slate-700 p-3 focus:border-yellow-500 outline-none"
+          class="w-full rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 border border-slate-200 dark:border-slate-700 p-3 focus:border-yellow-500 outline-none"
         >
       </div>
 
@@ -145,7 +145,7 @@ function logout() {
         <input
           v-model="newPassword"
           type="password"
-          class="w-full rounded-lg bg-slate-900 border border-slate-700 p-3 focus:border-yellow-500 outline-none"
+          class="w-full rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 border border-slate-200 dark:border-slate-700 p-3 focus:border-yellow-500 outline-none"
         >
       </div>
 
@@ -157,7 +157,7 @@ function logout() {
         <input
           v-model="confirmPassword"
           type="password"
-          class="w-full rounded-lg bg-slate-900 border border-slate-700 p-3 focus:border-yellow-500 outline-none"
+          class="w-full rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 border border-slate-200 dark:border-slate-700 p-3 focus:border-yellow-500 outline-none"
         >
       </div>
 

@@ -69,7 +69,7 @@ async function handleLogin() {
           <input
             v-model="mail"
             type="text"
-            class="w-full p-3 rounded-lg border dark:bg-slate-900"
+            class="w-full p-3 rounded-lg border bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           >
         </div>
@@ -83,7 +83,7 @@ async function handleLogin() {
           <input
             v-model="password"
             type="password"
-            class="w-full p-3 rounded-lg border dark:bg-slate-900"
+            class="w-full p-3 rounded-lg border bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           >
         </div>
@@ -91,7 +91,7 @@ async function handleLogin() {
         <!-- BUTTON -->
         <button
           type="submit"
-          class="w-full bg-blue-600 text-white py-3 rounded-lg disabled:opacity-50"
+          class="w-full bg-blue-600 text-slate-900 dark:text-white py-3 rounded-lg disabled:opacity-50"
           :disabled="loading"
         >
           <span v-if="!loading">
