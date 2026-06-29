@@ -5,8 +5,11 @@ from database import get_db
 from dependencies import get_admin_user
 from models import User, File, Log, BanRecord
 from schemas import UserOut, BanRequest, BanRecordOut, RoleUpdate
+import os
 
 router = APIRouter()
+
+UPLOAD_DIR = "storage/"
 
 
 @router.get("/users", response_model=list[UserOut])
@@ -119,6 +122,41 @@ def get_stats(
         "banned_users": db.query(User).filter(User.account_status == 2).count(),
         "deleted_users": db.query(User).filter(User.account_status == 3).count(),
         "total_files": db.query(File).count(),
+    }
+
+
+@router.get("/overview")
+def get_overview(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_admin_user)
+):
+    total_users = db.query(User).count()
+
+    files_sent = db.query(Log).filter(
+        Log.action_type.like("file_sent_to_%")
+    ).count()
+
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    uploads_today = db.query(Log).filter(
+        Log.action_type.like("file_sent_to_%"),
+        Log.log_timestamp >= today_start
+    ).count()
+
+    storage_used_bytes = 0
+    if os.path.exists(UPLOAD_DIR):
+        for filename in os.listdir(UPLOAD_DIR):
+            file_path = os.path.join(UPLOAD_DIR, filename)
+            if os.path.isfile(file_path):
+                storage_used_bytes += os.path.getsize(file_path)
+
+    storage_used_gb = round(storage_used_bytes / (1024 ** 3), 2)
+
+    return {
+        "total_users": total_users,
+        "files_sent": files_sent,
+        "uploads_today": uploads_today,
+        "storage_used_gb": storage_used_gb,
+        "storage_used_bytes": storage_used_bytes
     }
 
 
