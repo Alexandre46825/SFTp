@@ -1,0 +1,39 @@
+services:
+  web:
+    image: php:8.2-apache
+    container_name: apache_web
+    ports:
+      - "8080:80"
+    volumes:
+      - ./www:/var/www/html
+
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d
+      - db_data:/var/lib/mysql
+
+  app:
+    build:
+      context: ./python/back/
+      dockerfile: Dockerfile
+    image: sftp-cloud
+    container_name: sftp-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./python/back/.env
+    volumes:
+      - ./storage:/app/storage
+
+volumes:
+  db_data:
