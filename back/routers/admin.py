@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from database import get_db
 from dependencies import get_admin_user
-from models import User, File, Share, Log, BanRecord
+from models import User, File, Log, BanRecord
 from schemas import UserOut, BanRequest, BanRecordOut, RoleUpdate
 
 router = APIRouter()
@@ -119,7 +119,6 @@ def get_stats(
         "banned_users": db.query(User).filter(User.account_status == 2).count(),
         "deleted_users": db.query(User).filter(User.account_status == 3).count(),
         "total_files": db.query(File).count(),
-        "total_shares": db.query(Share).count(),
     }
 
 

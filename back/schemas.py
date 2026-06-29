@@ -27,6 +27,15 @@ class UserOut(BaseModel):
     class Config:
         from_attributes = True
 
+class UserPublicOut(BaseModel):
+    id_user: int
+    mail: str
+    username: str
+    location: Optional[str]
+
+    class Config:
+        from_attributes = True
+
 
 class LoginRequest(BaseModel):
     mail: EmailStr
@@ -37,35 +46,25 @@ class Token(BaseModel):
     token_type: str
 
 
+class SenderInfo(BaseModel):
+    id_user: int
+    name: str
+    surname: str
+    username: str
+    mail: str
+
+    class Config:
+        from_attributes = True
+
 class FileOut(BaseModel):
     id_file: int
     file_name: str
     file_size: int
     mime_type: str
     upload_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class ShareCreate(BaseModel):
-    id_file: int
-    id_receiver: int
-    expires_days: int = 7
-    encryption_type: str = "AES-256"
+    expires_at: Optional[datetime] = None
     message: Optional[str] = None
-
-class ShareOut(BaseModel):
-    id_share: int
-    id_file: int
-    id_sender: int
-    id_receiver: int
-    shared_at: datetime
-    expires_at: datetime
-    is_downloaded: bool
-    download_count: int
-    encryption_type: str
-    message: Optional[str]
+    sender: Optional[SenderInfo] = None
 
     class Config:
         from_attributes = True
@@ -114,3 +113,12 @@ class BanRecordOut(BaseModel):
 
 class RoleUpdate(BaseModel):
     is_admin: bool
+
+
+class PasswordUpdate(BaseModel):
+    old_password: str
+    new_password: str
+
+class ProfileUpdate(BaseModel):
+    username: Optional[str] = None
+    location: Optional[str] = None

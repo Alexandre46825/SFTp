@@ -28,3 +28,24 @@ def generate_pgp_keypair(user_id: int, name_real: str, name_email: str, passphra
     shutil.rmtree(gnupghome, ignore_errors=True)
 
     return public_key, private_key
+
+
+def encrypt_file_pgp(file_bytes: bytes, recipient_public_key: str, recipient_email: str, tmp_id: str) -> bytes:
+    gnupghome = f"/tmp/gpg_op_{tmp_id}"
+    os.makedirs(gnupghome, exist_ok=True)
+    gpg = gnupg.GPG(gnupghome=gnupghome)
+
+    gpg.import_keys(recipient_public_key)
+
+    encrypted = gpg.encrypt(
+        file_bytes,
+        recipients=[recipient_email],
+        always_trust=True
+    )
+
+    shutil.rmtree(gnupghome, ignore_errors=True)
+
+    if not encrypted.ok:
+        raise ValueError(f"Échec du chiffrement PGP: {encrypted.status}")
+
+    return encrypted.data

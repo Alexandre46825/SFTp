@@ -22,8 +22,6 @@ class User(Base):
     private_key    = Column(Text, nullable=True)
 
     uploads          = relationship("Upload", back_populates="user")
-    sent_shares      = relationship("Share", foreign_keys="Share.id_sender", back_populates="sender")
-    recv_shares      = relationship("Share", foreign_keys="Share.id_receiver", back_populates="receiver")
     logs             = relationship("Log", back_populates="user")
     friendships_sent = relationship("Friendship", foreign_keys="Friendship.id_requester", back_populates="requester")
     friendships_recv = relationship("Friendship", foreign_keys="Friendship.id_receiver", back_populates="receiver")
@@ -52,11 +50,13 @@ class File(Base):
     file_size   = Column(BigInteger)
     mime_type   = Column(String(100))
     upload_at   = Column(DateTime, default=datetime.datetime.utcnow)
+    expires_at  = Column(DateTime, nullable=True)
+    message     = Column(Text, nullable=True)
+    id_sender   = Column(Integer, ForeignKey("users.id_user"), nullable=True)
 
     upload = relationship("Upload", back_populates="file")
-    shares = relationship("Share", back_populates="file")
     logs   = relationship("Log", back_populates="file")
-
+    sender = relationship("User", foreign_keys=[id_sender])
 
 class Upload(Base):
     __tablename__ = "uploads"
@@ -68,25 +68,6 @@ class Upload(Base):
 
     user = relationship("User", back_populates="uploads")
     file = relationship("File", back_populates="upload")
-
-
-class Share(Base):
-    __tablename__ = "shares"
-
-    id_share        = Column(Integer, primary_key=True, index=True)
-    id_file         = Column(Integer, ForeignKey("files.id_file"))
-    id_sender       = Column(Integer, ForeignKey("users.id_user"))
-    id_receiver     = Column(Integer, ForeignKey("users.id_user"))
-    shared_at       = Column(DateTime, default=datetime.datetime.utcnow)
-    expires_at      = Column(DateTime)
-    is_downloaded   = Column(Boolean, default=False)
-    download_count  = Column(Integer, default=0)
-    encryption_type = Column(String(20), default="AES-256")
-    message         = Column(Text, nullable=True)
-
-    file     = relationship("File", back_populates="shares")
-    sender   = relationship("User", foreign_keys=[id_sender], back_populates="sent_shares")
-    receiver = relationship("User", foreign_keys=[id_receiver], back_populates="recv_shares")
 
 
 class Log(Base):

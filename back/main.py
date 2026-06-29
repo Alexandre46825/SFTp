@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import auth, files, shares, friends, admin, users
+from routers import auth, files, friends, admin, users
 
 app = FastAPI(title="SFTP Cloud", version="1.0")
 
@@ -13,7 +13,6 @@ app.add_middleware(
 
 app.include_router(auth.router,    prefix="/auth",    tags=["Auth"])
 app.include_router(files.router,   prefix="/files",   tags=["Files"])
-app.include_router(shares.router,  prefix="/shares",  tags=["Shares"])
 app.include_router(friends.router, prefix="/friends", tags=["Friends"])
 app.include_router(admin.router,   prefix="/admin",   tags=["Admin"])
 app.include_router(users.router,   prefix="/users",   tags=["Users"])
