@@ -3,12 +3,12 @@ from sqlalchemy.orm import Session
 from database import get_db
 from dependencies import get_current_user
 from models import User, Friendship
-from schemas import FriendshipCreate, FriendshipOut
+from schemas import FriendshipCreate, FriendInfo, FriendRequestInfo
 
 router = APIRouter()
 
 
-@router.post("/add", response_model=FriendshipOut)
+@router.post("/add", response_model=FriendInfo)
 def add_friend(
     data: FriendshipCreate,
     db: Session = Depends(get_db),
@@ -35,11 +35,11 @@ def add_friend(
     )
     db.add(new_friendship)
     db.commit()
-    db.refresh(new_friendship)
-    return new_friendship
+
+    return receiver
 
 
-@router.get("/requests", response_model=list[FriendshipOut])
+@router.get("/requests", response_model=list[FriendRequestInfo])
 def get_friend_requests(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -48,30 +48,49 @@ def get_friend_requests(
         Friendship.id_receiver == current_user.id_user,
         Friendship.status == "pending"
     ).all()
-    return requests
+
+    requesters = []
+    for req in requests:
+        requester = db.query(User).filter(User.id_user == req.id_requester).first()
+        if requester:
+            requesters.append(requester)
+
+    return requesters
 
 
-@router.get("/list", response_model=list[FriendshipOut])
+@router.get("/list", response_model=list[FriendInfo])
 def get_friends(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    friends = db.query(Friendship).filter(
+    friendships = db.query(Friendship).filter(
         (Friendship.id_requester == current_user.id_user) |
         (Friendship.id_receiver == current_user.id_user),
         Friendship.status == "accepted"
     ).all()
-    return friends
+
+    friends_list = []
+    for friendship in friendships:
+        if friendship.id_requester == current_user.id_user:
+            friend_id = friendship.id_receiver
+        else:
+            friend_id = friendship.id_requester
+
+        friend = db.query(User).filter(User.id_user == friend_id).first()
+        if friend:
+            friends_list.append(friend)
+
+    return friends_list
 
 
-@router.put("/accept/{friendship_id}", response_model=FriendshipOut)
+@router.put("/accept/{user_id}", response_model=FriendInfo)
 def accept_friend(
-    friendship_id: int,
+    user_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     friendship = db.query(Friendship).filter(
-        Friendship.id_friendship == friendship_id,
+        Friendship.id_requester == user_id,
         Friendship.id_receiver == current_user.id_user,
         Friendship.status == "pending"
     ).first()
@@ -80,18 +99,19 @@ def accept_friend(
 
     friendship.status = "accepted"
     db.commit()
-    db.refresh(friendship)
-    return friendship
+
+    requester = db.query(User).filter(User.id_user == user_id).first()
+    return requester
 
 
-@router.put("/block/{friendship_id}", response_model=FriendshipOut)
+@router.put("/block/{user_id}", response_model=FriendInfo)
 def block_friend(
-    friendship_id: int,
+    user_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     friendship = db.query(Friendship).filter(
-        Friendship.id_friendship == friendship_id,
+        Friendship.id_requester == user_id,
         Friendship.id_receiver == current_user.id_user
     ).first()
     if not friendship:
@@ -99,20 +119,20 @@ def block_friend(
 
     friendship.status = "blocked"
     db.commit()
-    db.refresh(friendship)
-    return friendship
+
+    requester = db.query(User).filter(User.id_user == user_id).first()
+    return requester
 
 
-@router.delete("/remove/{friendship_id}")
+@router.delete("/remove/{user_id}")
 def remove_friend(
-    friendship_id: int,
+    user_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     friendship = db.query(Friendship).filter(
-        Friendship.id_friendship == friendship_id,
-        (Friendship.id_requester == current_user.id_user) |
-        (Friendship.id_receiver == current_user.id_user)
+        ((Friendship.id_requester == current_user.id_user) & (Friendship.id_receiver == user_id)) |
+        ((Friendship.id_requester == user_id) & (Friendship.id_receiver == current_user.id_user))
     ).first()
     if not friendship:
         raise HTTPException(status_code=404, detail="Amitié introuvable")

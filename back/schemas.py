@@ -73,12 +73,22 @@ class FileOut(BaseModel):
 class FriendshipCreate(BaseModel):
     id_receiver: int
 
-class FriendshipOut(BaseModel):
-    id_friendship: int
-    id_requester: int
-    id_receiver: int
-    status: str
-    created_at: datetime
+class FriendInfo(BaseModel):
+    id_user: int
+    name: str
+    surname: str
+    location: Optional[str]
+    mail: str
+
+    class Config:
+        from_attributes = True
+
+class FriendRequestInfo(BaseModel):
+    id_user: int
+    name: str
+    surname: str
+    location: Optional[str]
+    mail: str
 
     class Config:
         from_attributes = True
