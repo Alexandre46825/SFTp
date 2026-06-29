@@ -1,108 +1,144 @@
 <script setup>
-import { ref, computed } from 'vue'
-//import { useFriendsStore } from '@/stores/friends'
+import { ref, computed, onMounted } from 'vue'
+import { useFriendsStore } from '@/stores/friends'
+import { useAuthStore } from '@/stores/Auth'
+import { useUsersStore } from '@/stores/users'
+import api from '@/services/api'
 
-// Initialisation of the form data
+/* =========================
+   LOAD DATA
+========================= */
+
+const friendsStore = useFriendsStore()
+const auth = useAuthStore()
+const usersStore = useUsersStore()
+
+onMounted(async () => {
+  await friendsStore.refreshAll()
+  if (usersStore.users.length === 0) {
+    await usersStore.loadUsers()
+  }
+})
+
+/* =========================
+   FILE
+========================= */
+
 const selectedFile = ref(null)
 const fileInput = ref(null)
 
 function handleFileChange(event) {
   const file = event.target.files[0]
-
   if (!file) return
 
-  selectedFile.value = {
-    file,
-    name: file.name,
-    size: +(file.size / 1024 / 1024).toFixed(2)
-  }
-
-  uploadProgress.value = 0
+  selectedFile.value = file
 }
 
 function removeFile() {
   selectedFile.value = null
-
-  if (fileInput.value) {
-    fileInput.value.value = ''
-  }
+  if (fileInput.value) fileInput.value.value = ''
 }
 
-const message = ref(
-  'Here is the latest build — please review before Friday.'
-)
+/* =========================
+   FORM
+========================= */
+const message = ref('')
+const expiration = ref('7') // jours
+const uploadProgress = ref(0)
 
-const expiration = ref('7 days')
-const uploadProgress = ref(65)
-
-const uploadedSize = computed(() => {
-  if (!selectedFile.value) return 0
-
-  return (
-    selectedFile.value.size * uploadProgress.value / 100
-  ).toFixed(1)
-})
-
-const remainingTime = computed(() => {
-  if (uploadProgress.value === 0 || !selectedFile.value) {
-    return '--'
-  }
-
-  const speed = 5 // MB/s simulés
-
-  const remaining =
-    selectedFile.value.size - Number(uploadedSize.value)
-
-  return Math.ceil(remaining / speed)
-})
 let interval = null
 
 function startUpload() {
-  if (!selectedFile.value) return
+  uploadFile()
+}
+
+/* =========================
+   FRIENDS -> USERS
+========================= */
+function getUserById(id) {
+  return usersStore.users.find(u => u.id_user === id)
+}
+
+const friends = computed(() => {
+  return friendsStore.friends.map(req => {
+    const otherUserId =
+      req.id_requester === auth.user.id
+        ? req.id_requester
+        : req.id_receiver
+
+    return {
+      friendship_id: req.id_friendship, // IMPORTANT
+      user: getUserById(otherUserId)
+    }
+  })
+})
+
+/* =========================
+   RECIPIENTS
+   -> on stocke uniquement des ID
+========================= */
+const recipients = ref([])
+const selectedRecipient = ref('')
+
+function addRecipient() {
+  if (!selectedRecipient.value) return
+
+  const id = parseInt(selectedRecipient.value)
+
+  if (!recipients.value.includes(id)) {
+    recipients.value.push(id)
+  }
+
+  selectedRecipient.value = ''
+}
+
+function removeRecipient(id) {
+  recipients.value = recipients.value.filter(r => r !== id)
+}
+
+/* =========================
+   API UPLOAD
+========================= */
+async function uploadFile() {
+  if (!selectedFile.value || recipients.value.length === 0) return
+
+  const formData = new FormData()
+
+  formData.append('file', selectedFile.value)
+
+  // backend attend un user_id → on envoie 1 fichier = 1 user
+  // donc on boucle ou on envoie plusieurs requêtes
+  const promises = recipients.value.map(userId => {
+    const fd = new FormData()
+    fd.append('file', selectedFile.value)
+    fd.append('user_id', userId)
+    fd.append('expiration_date', expiration.value)
+    fd.append('message', message.value)
+    console.log(fd)
+
+    return api.post('/files/send', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  })
 
   uploadProgress.value = 0
-
-  clearInterval(interval)
 
   interval = setInterval(() => {
     if (uploadProgress.value >= 100) {
       clearInterval(interval)
       return
     }
+    uploadProgress.value += 10
+  }, 200)
 
-    uploadProgress.value += 5
-  }, 500)
-}
-//const friendsStore = useFriendsStore()
-
-const recipients = ref([])
-const selectedRecipient = ref('')
-
-function addRecipient() {
-  if (
-    selectedRecipient.value &&
-    !recipients.value.includes(selectedRecipient.value)
-  ) {
-    recipients.value.push(selectedRecipient.value)
+  try {
+    await Promise.all(promises)
+    uploadProgress.value = 100
+  } catch (e) {
+    console.error(e)
+    clearInterval(interval)
   }
-
-  selectedRecipient.value = ''
 }
-function removeRecipient(recipient) {
-  recipients.value = recipients.value.filter(
-    r => r !== recipient
-  )
-}
-// const formData = new FormData()
-// formData.append('file', selectedFile.value.file)
-
-// await axios.post('/api/upload', formData, {
-//   onUploadProgress: (event) => {
-//     uploadProgress.value = Math.round(
-//       (event.loaded * 100) / event.total
-//     )
-//   }
-// })
 </script>
 
 <template>
@@ -185,15 +221,13 @@ function removeRecipient(recipient) {
 
           <div class="flex flex-wrap gap-2 mb-3">
             <span
-              v-for="recipient in recipients"
-              :key="recipient"
+              v-for="id in recipients"
+              :key="id"
               class="bg-blue-600/20 text-blue-300 px-4 py-2 rounded-full flex items-center gap-2"
             >
-              {{ recipient }}
+              {{ usersStore.users.find(u => u.id_user === id)?.username }}
 
-              <button @click="removeRecipient(recipient)">
-                ✕
-              </button>
+              <button @click="removeRecipient(id)">✕</button>
             </span>
 
             <div class="flex gap-2">
@@ -207,11 +241,11 @@ function removeRecipient(recipient) {
 
                 <option
                   v-for="friend in friends"
-                  :key="friend"
-                  :value="friend"
+                  :key="friend.friendship_id"
+                  :value="friend.user?.id_user"
                 >
-                  {{ friend }}
-                </option>
+                  {{ friend.user?.username || 'Unknown' }}
+                </option> 
               </select>
 
               <button
@@ -232,10 +266,10 @@ function removeRecipient(recipient) {
             v-model="expiration"
             class="w-full rounded-xl bg-slate-900 border border-slate-700 p-3 focus:border-blue-500 outline-none"
           >
-            <option>1 day</option>
-            <option>3 days</option>
-            <option>7 days</option>
-            <option>30 days</option>
+            <option value="1">1 day</option>
+            <option value="3">3 days</option>
+            <option value="7">7 days</option>
+            <option value="30">30 days</option>
           </select>
         </div>
       </div>
@@ -261,10 +295,10 @@ function removeRecipient(recipient) {
       </button>
 
       <!-- Upload progress -->
-      <div class="space-y-3">
+      <div v-if="uploadProgress > 0" class="space-y-3">
         <div class="flex justify-between text-sm">
           <span class="text-slate-300">
-            Upload in progress…
+              {{ uploadProgress < 100 ? 'Uploading...' : 'Upload complete!' }}
           </span>
 
           <span class="text-slate-400">
@@ -283,7 +317,7 @@ function removeRecipient(recipient) {
           v-if="selectedFile"
           class="text-sm text-slate-400"
         >
-          {{ uploadedSize }} MB of {{ selectedFile.size }} MB · ~{{ remainingTime }}s remaining
+          {{ (uploadProgress / 100 * selectedFile.size).toFixed(2) }} MB uploaded
         </p>
       </div>
     </div>

@@ -42,7 +42,7 @@ export const useFilesStore = defineStore('files', {
       try {
 
         const response =
-          await api.get('/files')
+          await api.get('/files/my-files')
 
         this.files = response.data
 

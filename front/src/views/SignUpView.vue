@@ -46,12 +46,13 @@ async function handleRegister() {
   try {
 
     await authStore.signup({
-      firstname: firstName.value,
-      lastname: lastName.value,
+      name: firstName.value,
+      surname: lastName.value,
       username: username.value,
-      email: email.value,
+      mail: email.value,
       password: password.value,
-      encryption_password: encryptionPassword.value
+      password_pgp: encryptionPassword.value,
+      location: "Unknown"
     })
 
     // redirection vers login après inscription

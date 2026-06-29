@@ -7,90 +7,113 @@ import HomeView from '../views/HomeView.vue'
 
 import FilesView from '../views/FilesView.vue'
 import UploadView from '../views/UploadView.vue'
+import DownloadView from '../views/DownloadView.vue'
 import SettingsView from '../views/SettingsView.vue'
 import NetworkView from '../views/NetworkView.vue'
 
 import AdminOverview from '../views/AdminOverview.vue'
 import UsersAdmin from '../views/UsersAdmin.vue'
 import UserDetails from '../views/UserDetails.vue'
-import StatsAdmin from '../views/AdminStats.vue'
+import LogsView from '../views/LogsView.vue'
 
 import MainLayout from '@/layouts/MainLayout.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 
+/* =========================
+   ROUTES
+========================= */
 const routes = [
+
+  /* =========================
+     APP (AUTH REQUIRED)
+  ========================= */
   {
     path: '/',
     component: MainLayout,
-    children: 
-    [
+    children: [
       {
-        path: '/network',
-        name: 'network',
-        component: NetworkView,
-        meta: { requiresAuth: true }
-      },
-      {
-        path: '/',
+        path: '',
         name: 'home',
         component: HomeView,
         meta: { requiresAuth: true }
       },
       {
-        path: '/files',
+        path: 'network',
+        name: 'network',
+        component: NetworkView,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'files',
         name: 'files',
         component: FilesView,
         meta: { requiresAuth: true }
       },
       {
-        path: '/upload',
+        path: 'upload',
         name: 'upload',
         component: UploadView,
         meta: { requiresAuth: true }
       },
       {
-        path: '/settings',
+        path: 'download/:id_file',
+        name: 'download',
+        component: DownloadView,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'settings',
         name: 'settings',
         component: SettingsView,
         meta: { requiresAuth: true }
       },
+
+      /* =========================
+         ADMIN ROUTES
+      ========================= */
       {
-        path: '/admin',
+        path: 'admin',
         name: 'admin',
         component: AdminOverview,
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, requiresAdmin: true }
       },
       {
-        path: '/user-admin',
-        name: 'user-admin',
+        path: 'admin/users',
+        name: 'admin-users',
         component: UsersAdmin,
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, requiresAdmin: true }
       },
       {
-        path: '/admin/users/:id',
+        path: 'admin/users/:id',
+        name: 'admin-user-details',
         component: UserDetails,
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true, requiresAdmin: true }
       },
       {
-        path: '/stats-admin',
-        name: 'stats-admin',
-        component: StatsAdmin,
-        meta: { requiresAuth: true }
+        path: 'admin/logs',
+        name: 'admin-logs',
+        component: LogsView,
+        meta: { requiresAuth: true, requiresAdmin: true }
       }
     ]
   },
+
+  /* =========================
+     AUTH
+  ========================= */
   {
     path: '/',
     component: AuthLayout,
-    children: 
-    [
+    children: [
       {
-        path: '/login',
+        path: 'login',
+        name: 'login',
         component: LoginView,
         meta: { guestOnly: true }
       },
       {
-        path: '/signup',
+        path: 'signup',
+        name: 'signup',
         component: SignUpView,
         meta: { guestOnly: true }
       }
@@ -98,36 +121,39 @@ const routes = [
   }
 ]
 
+/* =========================
+   ROUTER
+========================= */
 const router = createRouter({
   history: createWebHistory(),
-  routes,
+  routes
 })
 
+/* =========================
+   GLOBAL GUARD
+========================= */
 router.beforeEach(async (to) => {
-
   const auth = useAuthStore()
 
-  /* Charger user si token existe */
+  // charge user si token existe
   if (auth.token && !auth.user) {
     await auth.fetchUser()
   }
 
-  /* =========================
-     NON CONNECTÉ
-  ========================= */
-
+  // pas connecté
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return '/login'
   }
 
-  /* =========================
-     CONNECTÉ MAIS PAGE GUEST
-  ========================= */
-
+  // connecté mais page login/signup
   if (to.meta.guestOnly && auth.isAuthenticated) {
     return '/'
   }
 
+  // admin only
+  if (to.meta.requiresAdmin && !auth.isAdmin) {
+    return '/'
+  }
 })
 
 export default router
