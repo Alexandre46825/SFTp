@@ -1,11 +1,113 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useFriendsStore } from '@/stores/friends'
+import { useUsersStore } from '@/stores/users'
+import { useAuthStore } from '@/stores/Auth'
 
+const friendsStore = useFriendsStore()
+const userStore = useUsersStore()
+const auth = useAuthStore()
+
+/* =========================
+   UI STATE
+========================= */
 const showAddFriendModal = ref(false)
 const searchQuery = ref('')
-const filterStatus = ref('all')
 
+const selectedFriend = ref(null)
+const showModal = ref(false)
 
+/* =========================
+   LOAD DATA
+========================= */
+onMounted(async () => {
+  await friendsStore.refreshAll()
+
+  if (userStore.users.length === 0) {
+    await userStore.loadUsers()
+  }
+})
+
+/* =========================
+   COMPUTED
+========================= */
+
+const friends = computed(() => {
+  return friendsStore.friends.map(req => {
+    const otherUserId =
+      req.id_requester == auth.user.id
+        ? req.id_requester
+        : req.id_receiver
+
+    return {
+      id_friendship: req.id_friendship,
+      status: req.status,
+      created_at: req.created_at,
+
+      user: userStore.users.find(u => u.id_user === otherUserId)
+    }
+  })
+})
+
+const requests = computed(() => {
+  return friendsStore.requests.map(req => {
+    const otherUserId =
+      req.id_requester === auth.user.id
+        ? req.id_receiver
+        : req.id_requester
+
+    return {
+      ...req,
+      user: getUserById(otherUserId)
+    }
+  })
+})
+
+const availableUsers = computed(() => {
+  const friendIds = friends.value.map(f => f.id_user)
+  const requestUserIds = requests.value.map(r => r.user?.id_user)
+
+  return userStore.users.filter(user => {
+    const notFriend = !friendIds.includes(user.id_user)
+    const notRequested = !requestUserIds.includes(user.id_user)
+
+    const matchSearch =
+      !searchQuery.value ||
+      user.username?.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+      user.mail?.toLowerCase().includes(searchQuery.value.toLowerCase())
+
+    return notFriend && notRequested && matchSearch
+  })
+})
+
+/* =========================
+   ACTIONS
+========================= */
+async function addFriend(user) {
+  await friendsStore.addFriend(user.id_user)
+  await friendsStore.loadRequests()
+}
+
+async function acceptRequest(req) {
+  await friendsStore.acceptFriend(req.id_friendship)
+  await friendsStore.refreshAll()
+}
+
+async function declineRequest(req) {
+  await friendsStore.removeFriend(req.id_friendship)
+  await friendsStore.refreshAll()
+}
+
+async function removeFriend() {
+  if (!selectedFriend.value) return
+
+  await friendsStore.removeFriend(selectedFriend.value.id_friendship)
+  closeModal()
+}
+
+/* =========================
+   MODALS
+========================= */
 function openAddFriend() {
   showAddFriendModal.value = true
 }
@@ -13,76 +115,7 @@ function openAddFriend() {
 function closeAddFriend() {
   showAddFriendModal.value = false
   searchQuery.value = ''
-  filterStatus.value = 'all'
 }
-
-function sendRequest(user) {
-  user.relation = 'pending'
-}
-
-// filtre dynamique
-const filteredUsers = computed(() => {
-  return users.value
-    .filter(u => u.relation === 'none')
-    .filter(user => {
-      const matchSearch =
-        user.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchQuery.value.toLowerCase())
-
-      const matchFilter =
-        filterStatus.value === 'all' ||
-        user.status === filterStatus.value
-
-      return matchSearch && matchFilter
-    })
-})
-const users = ref([
-  {
-    id: 101,
-    name: 'Emma Laurent',
-    username: '@emma',
-    location: 'Laval',
-    mail: 'test@example.com',
-    status: 'En ligne',
-    role: 'Frontend Dev',
-    relation: 'none',
-  },
-  {
-    id: 102,
-    name: 'Lucas Morel',
-    username: '@lucas',
-    location: 'Lyon',
-    mail: 'lucas@example.com',
-    status: 'Hors ligne',
-    role: 'Backend Dev',
-    relation: 'friend',
-  },
-  {
-    id: 103,
-    name: 'Sarah Lopez',
-    username: '@sarah',
-    location: 'Marseille',
-    mail: 'sarah@example.com',
-    status: 'Absent',
-    role: 'UI Designer',
-    relation: 'received',
-  },
-])
-
-const friends = computed(() =>
-  users.value.filter(u => u.relation === 'friend')
-)
-
-const requests = computed(() =>
-  users.value.filter(u => u.relation === 'received')
-)
-
-const suggestions = computed(() =>
-  users.value.filter(u => u.relation === 'none')
-)
-
-const selectedFriend = ref(null)
-const showModal = ref(false)
 
 function openProfile(friend) {
   selectedFriend.value = friend
@@ -93,235 +126,204 @@ function closeModal() {
   showModal.value = false
   selectedFriend.value = null
 }
-
-function acceptRequest(id) {
-  const user = users.value.find(u => u.id === id)
-  if (!user) return
-
-  user.relation = 'friend'
-}
-
-function declineRequest(id) {
-  const user = users.value.find(u => u.id === id)
-  if (!user) return
-
-  user.relation = 'none'
-}
 </script>
 
 <template>
   <div class="p-6 space-y-8">
 
+    <!-- HEADER -->
     <div>
       <h1 class="text-3xl font-bold">Network Management</h1>
       <p class="text-slate-400">Manage your connections and relationships</p>
     </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 gap-4">
+    <!-- GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-    <!-- LISTE AMIS -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-700 p-4">
-      <h2 class="text-xl font-bold mb-4">👥 Amis</h2>
+      <!-- FRIENDS -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-700 p-4">
+        <h2 class="text-xl font-bold mb-4">👥 Amis</h2>
 
-      <div class="space-y-2">
-        <div
-          v-for="friend in friends"
-          :key="friend.id"
-          @click="openProfile(friend)"
-          class="p-3 rounded-xl cursor-pointer hover:bg-gray-200 dark:hover:bg-slite-800 transition flex justify-between items-center"
-        >
-          <div>
-            <p class="font-semibold">{{ friend.name }}</p>
-            <p class="text-sm text-slate-400">{{ friend.username }}</p>
-          </div>
+        <div v-if="friends.length === 0" class="text-slate-400 text-sm">
+          Aucun ami pour le moment
+        </div>
 
-          <span
-            class="text-xs px-2 py-1 rounded-full"
-            :class="{
-              'bg-green-500/20 text-green-400': friend.status === 'En ligne',
-              'bg-yellow-500/20 text-yellow-400': friend.status === 'Absent',
-              'bg-slate-600 text-slate-300': friend.status === 'Hors ligne',
-            }"
+        <div class="space-y-2">
+          <div
+            v-for="friend in friends"
+            :key="friend.id_user"
+            @click="openProfile(friend)"
+            class="p-3 rounded-xl cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition flex justify-between items-center"
           >
-            {{ friend.status }}
-          </span>
+            <div>
+              <p class="font-semibold">{{ friend.user?.username }}</p>
+              <p class="text-sm text-slate-400">{{ friend.user?.mail }}</p>
+            </div>
+
+            <span class="text-xs px-2 py-1 rounded-full bg-slate-700 text-slate-200">
+              👤
+            </span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- DEMANDES -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-700 p-4">
-      <h2 class="text-xl font-bold mb-4">➕ Demandes d'amis</h2>
+      <!-- REQUESTS -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-700 p-4">
+        <h2 class="text-xl font-bold mb-4">➕ Demandes</h2>
 
-      <div class="space-y-3">
-        <div
-          v-for="req in requests"
-          :key="req.id"
-          class="p-3 bg-slate-900 rounded-xl border border-slate-700"
-        >
-          <p class="font-semibold">{{ req.name }}</p>
-          <p class="text-sm text-slate-400 mb-3">{{ req.username }}</p>
+        <div v-if="requests.length === 0" class="text-slate-400 text-sm">
+          Aucune demande
+        </div>
 
-          <div class="flex gap-2">
-            <button
-              @click="acceptRequest(req.id)"
-              class="flex-1 bg-green-600 hover:bg-green-700 py-1 rounded-lg text-sm"
-            >
-              Accepter
-            </button>
+        <div class="space-y-3">
+          <div
+            v-for="req in requests"
+            :key="req.id_friendship"
+            class="p-3 bg-slate-900 rounded-xl border border-slate-700"
+          >
+            <p class="font-semibold">
+              {{ req.user?.username || 'Utilisateur inconnu' }}
+            </p>
+            <p class="text-sm text-slate-400 mb-3">
+              {{ req.user?.mail }}
+            </p>
 
-            <button
-              @click="declineRequest(req.id)"
-              class="flex-1 bg-red-600 hover:bg-red-700 py-1 rounded-lg text-sm"
-            >
-              Refuser
-            </button>
+            <div class="flex gap-2">
+              <button
+                @click="acceptRequest(req)"
+                class="flex-1 bg-green-600 hover:bg-green-700 py-1 rounded-lg text-sm"
+              >
+                Accepter
+              </button>
+
+              <button
+                @click="declineRequest(req)"
+                class="flex-1 bg-red-600 hover:bg-red-700 py-1 rounded-lg text-sm"
+              >
+                Refuser
+              </button>
+            </div>
           </div>
         </div>
 
         <button
-        @click="openAddFriend"
-        class="w-full border border-slate-600 hover:bg-gray-200 dark:hover:bg-slite-800 py-2 rounded-xl mt-4"
+          @click="openAddFriend"
+          class="w-full border border-slate-600 hover:bg-gray-200 dark:hover:bg-gray-700 py-2 rounded-xl mt-4"
         >
-        ➕ Ajouter un ami
+          ➕ Ajouter un ami
         </button>
       </div>
     </div>
-<!-- MODALE AJOUT AMI -->
-<div
-  v-if="showAddFriendModal"
-  class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
-  @click="closeAddFriend"
->
-  <div
-    class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl border border-slate-700 p-6"
-    @click.stop
-  >
-    <!-- HEADER -->
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-xl font-bold">
-        ➕ Ajouter un ami
-      </h2>
 
-      <button
-        @click="closeAddFriend"
-        class="text-slate-400 hover:text-black dark:text-white"
-      >
-        ✖
-      </button>
-    </div>
-
-    <!-- SEARCH + FILTER -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="Rechercher un utilisateur..."
-        class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700"
-      />
-
-      <select
-        v-model="filterStatus"
-        class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700"
-      >
-        <option value="all">Tous les statuts</option>
-        <option value="En ligne">En ligne</option>
-        <option value="Absent">Absent</option>
-        <option value="Hors ligne">Hors ligne</option>
-      </select>
-    </div>
-
-    <!-- LISTE UTILISATEURS -->
-    <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
+    <!-- ADD FRIEND MODAL -->
+    <div
+      v-if="showAddFriendModal"
+      class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+      @click="closeAddFriend"
+    >
       <div
-        v-for="user in filteredUsers"
-        :key="user.id"
-        class="flex items-center justify-between p-4 bg-slate-900 border border-slate-700 rounded-xl"
+        class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl border border-slate-700 p-6"
+        @click.stop
       >
-        <div>
-          <p class="font-semibold">
-            {{ user.name }}
-          </p>
-
-          <p class="text-sm text-slate-400">
-            {{ user.username }} · {{ user.role }}
-          </p>
-
-          <p class="text-xs text-slate-500 mt-1">
-            {{ user.status }}
-          </p>
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-xl font-bold">➕ Ajouter un ami</h2>
+          <button @click="closeAddFriend">✖</button>
         </div>
 
-        <button
-            @click="sendRequest(user)"
-            class="px-4 py-2 rounded-lg text-sm"
-            :class="{
-                'bg-blue-600 hover:bg-blue-700': user.relation === 'none',
-                'bg-yellow-600 cursor-not-allowed': user.relation === 'pending',
-            }"
-            :disabled="user.relation !== 'none'"
+        <input
+          v-model="searchQuery"
+          placeholder="Rechercher..."
+          class="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 mb-4"
+        />
+
+        <div class="space-y-3 max-h-96 overflow-y-auto">
+
+          <div
+            v-for="user in availableUsers"
+            :key="user.id_user"
+            class="flex justify-between items-center p-4 bg-slate-900 rounded-xl border border-slate-700"
+          >
+            <div>
+              <p class="font-semibold">{{ user.username }}</p>
+              <p class="text-sm text-slate-400">{{ user.mail }}</p>
+            </div>
+
+            <button
+              @click="addFriend(user)"
+              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm"
             >
-            {{ user.relation === 'pending' ? 'Demande envoyée' : 'Ajouter' }}
-        </button>
+              Ajouter
+            </button>
+          </div>
+
+        </div>
       </div>
-
-      <p
-        v-if="filteredUsers.length === 0"
-        class="text-slate-400 text-center py-6"
-      >
-        Aucun utilisateur trouvé
-      </p>
     </div>
-  </div>
-</div>
 
-
-    <!-- MODALE PROFIL -->
+    <!-- PROFILE MODAL -->
     <div
       v-if="showModal"
       class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
       @click="closeModal"
     >
       <div
-        class="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl border border-slate-700 p-6 relative"
+        class="relative bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl border border-slate-700 p-6 shadow-xl"
         @click.stop
       >
-        <!-- bouton fermer -->
+        <!-- CLOSE -->
         <button
           @click="closeModal"
-          class="absolute top-3 right-3 text-slate-400 hover:text-black dark:text-white"
+          class="absolute top-3 right-3 text-slate-400 hover:text-white transition"
         >
           ✖
         </button>
 
-        <div v-if="selectedFriend" class="space-y-4">
-          <div>
+        <div v-if="selectedFriend" class="space-y-6">
+
+          <!-- HEADER -->
+          <div class="text-center space-y-1">
             <h2 class="text-2xl font-bold">
-              {{ selectedFriend.name }}
+              @{{ selectedFriend.user.username }}
             </h2>
-            <p class="text-slate-400">
-              {{ selectedFriend.username }}
-            </p>
+
           </div>
 
-          <div class="space-y-1 text-sm text-slate-300">
-            <p>📍 {{ selectedFriend.location }}</p>
-            <p>💼 {{ selectedFriend.role }}</p>
-            <p>🟢 {{ selectedFriend.status }}</p>
+          <!-- INFOS -->
+          <div class="space-y-3">
+
+            <div class="p-3 rounded-xl bg-slate-900 border border-slate-700">
+              <p class="text-xs text-slate-400 mb-1">📧 Email</p>
+              <p class="text-sm text-white">
+                {{ selectedFriend.user.mail || 'Not provided' }}
+              </p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-900 border border-slate-700">
+              <p class="text-xs text-slate-400 mb-1">📍 Location</p>
+              <p class="text-sm text-white">
+                {{ selectedFriend.user.location || 'Unknown' }}
+              </p>
+            </div>
+
           </div>
 
-          <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
-            <p class="text-slate-300">
-              {{ selectedFriend.bio }}
-            </p>
+          <!-- ACTIONS -->
+          <div class="space-y-2">
+
+            <!-- REMOVE FRIEND -->
+            <button
+              @click="removeFriend"
+              class="w-full bg-red-600/20 hover:bg-red-600/40 text-red-400 transition py-2 rounded-xl font-semibold border border-red-500/30"
+            >
+              🗑 Remove friend
+            </button>
+
           </div>
 
-          <button class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-xl font-semibold">
-            💬 Envoyer un message
-          </button>
         </div>
+
       </div>
     </div>
-  </div>
+
   </div>
 </template>

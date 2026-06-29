@@ -1,7 +1,9 @@
 <script setup>
 import { useSidebarStore } from '@/stores/sidebar'
+import { useAuthStore } from '@/stores/Auth'
 
 const sidebar = useSidebarStore()
+const auth = useAuthStore()
 </script>
 
 <template>
@@ -34,6 +36,7 @@ const sidebar = useSidebarStore()
           📤 Send file
         </RouterLink>
     </ul>
+    <div v-if="auth.isAdmin">
     <h2 class="text-lg font-bold text-black dark:text-white mt-8 mb-4">
         Admin Menu
     </h2>
@@ -47,17 +50,18 @@ const sidebar = useSidebarStore()
 
         
         <RouterLink
-            to="/user-admin"
+            to="/admin/users"
             class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-slite-800 hover:text-black dark:text-white transition"
             >
           📝 User settings
         </RouterLink>
         <RouterLink
-            to="/stats-admin"
+            to="/admin/logs"
             class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-200 dark:hover:bg-slite-800 hover:text-black dark:text-white transition"
             >
-          📊 Statistics
+          📜 Logs
         </RouterLink>
     </ul>
+    </div>
   </aside>
 </template>

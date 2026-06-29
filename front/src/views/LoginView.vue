@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/Auth'
 const router = useRouter()
 const authStore = useAuthStore()
 
-const login = ref('')
+const mail = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref(null)
@@ -19,7 +19,7 @@ async function handleLogin() {
   try {
 
     await authStore.login({
-      login: login.value,
+      mail: mail.value,
       password: password.value
     })
 
@@ -63,11 +63,11 @@ async function handleLogin() {
         <!-- LOGIN -->
         <div>
           <label class="block mb-2">
-            Email or Username
+            Email
           </label>
 
           <input
-            v-model="login"
+            v-model="mail"
             type="text"
             class="w-full p-3 rounded-lg border dark:bg-slate-900"
             required

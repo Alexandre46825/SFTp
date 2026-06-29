@@ -29,9 +29,6 @@ const sidebar = useSidebarStore()
 
       <nav>
         <ul class="flex gap-6 text-slate-300">
-          <RouterLink to="/notifications" class="hover:text-blue-400">
-            Notifications
-          </RouterLink>
 
           <RouterLink to="/settings" class="hover:text-blue-400">
             Account

@@ -14,7 +14,9 @@ export const useAuthStore = defineStore('auth', {
 ========================= */
 
   getters: {
-    isAuthenticated: (state) => !!state.token
+    isAuthenticated: (state) => !!state.token,
+    isAdmin: (state) => state.user?.is_admin === true
+    //isAdmin: true
   },
 
 /* =========================
@@ -32,9 +34,11 @@ export const useAuthStore = defineStore('auth', {
         const res = await api.post('/auth/login', credentials)
 
         this.token = res.data.access_token
-        this.user = res.data.user
-
         localStorage.setItem('token', this.token)
+
+        await this.fetchUser()
+
+        return res.data
 
       } finally {
         this.loading = false
@@ -42,22 +46,37 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async signup(data) {
-      await api.post('/auth/signup', data)
+      await api.post('/auth/register', data)
     },
 
     async fetchUser() {
 
       if (!this.token) return
 
-      const res = await api.get('/auth/me')
-
-      this.user = res.data
+      try {
+        const res = await api.get('/users/me')
+        this.user = res.data
+      } catch (err) {
+        console.error("fetchUser failed", err)
+        this.logout()
+      }
     },
 
     logout() {
       this.user = null
       this.token = null
       localStorage.removeItem('token')
+
+      delete api.defaults.headers.common['Authorization']
+    },
+
+    async updateProfile(data) {
+      const res = await api.put('/users/me/update', data)
+      this.user = res.data
+    },
+
+    async changePassword(data) {
+      return await api.put('/users/me/password', data)
     }
 
   }
