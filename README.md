@@ -2,6 +2,8 @@
 
 Secure file transfer between connected people
 
+UNIZA school project
+
 BDD : MySQL
 
 Languages:
