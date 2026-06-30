@@ -9,8 +9,7 @@ Languages:
 - CSS
 - JS
 - SQL
-- PHP
-- XML
+
 
 ## Project setup on Linux
 
@@ -46,3 +45,26 @@ We use:
 - **TailwindCSS** for styling, including full **dark mode support**
 
 The application is designed as a **Single Page Application (SPA)** with a strong separation between UI, state, and API layers. Data is dynamically updated through store actions to ensure a reactive user experience without page reloads.
+
+### Admin account
+
+```
+admin@uniza.sk
+```
+password:
+
+```
+admin
+```
+
+### User account
+
+```
+alexandre@uniza.sk
+```
+password:
+
+```
+alexandre
+```
+
